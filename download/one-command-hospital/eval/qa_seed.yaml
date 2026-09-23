@@ -1,0 +1,121 @@
+# Known-answer eval set (seed: 24 pairs, target: 200 in Phase 1).
+# Each answerable item is traced to a corpus id + section; the runner scores
+# (a) retrieval hit rate, (b) citation validity, (c) refusal correctness.
+# Improvement #5: the hospital AI gets an automatic exam before it ships.
+
+questions:
+  # ── ANTICOAG-BRIDGE v3.0 ─────────────────────────────────────────────
+  - id: a01
+    question: "How many days before elective surgery should warfarin be interrupted?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "3"
+    must_contain: ["5 days"]
+  - id: a02
+    question: "Does a low-risk patient with atrial fibrillation need bridging before a minor procedure?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "3"
+    must_contain: ["no bridging"]
+  - id: a03
+    question: "Which patients are classified as high thromboembolic risk in our bridging protocol?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "2"
+    must_contain: ["mechanical mitral valve"]
+  - id: a04
+    question: "What INR threshold must be met before the procedure proceeds?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "4"
+    must_contain: ["1.5"]
+  - id: a05
+    question: "What should be given if INR is 1.8 on the day before surgery?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "4"
+    must_contain: ["vitamin K"]
+  - id: a06
+    question: "When can warfarin be resumed after a minor procedure with adequate haemostasis?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "5"
+    must_contain: ["12"]
+  - id: a07
+    question: "How long is therapeutic anticoagulation delayed after a high-bleed-risk procedure?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "5"
+    must_contain: ["48"]
+  - id: a08
+    question: "Is bridging required for a patient with a mechanical mitral valve?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "6"
+    must_contain: ["bridging is required"]
+  - id: a09
+    question: "When is the last pre-operative LMWH dose given?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "3"
+    must_contain: ["24 hours"]
+  - id: a10
+    question: "Who should be contacted when there is uncertainty about the bridging plan?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "7"
+    must_contain: ["anticoagulation stewardship pharmacist"]
+  # ── SEPSIS-SCR ed.2 ─────────────────────────────────────────────────
+  - id: s01
+    question: "How often are inpatients screened for sepsis?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "2"
+    must_contain: ["shift"]
+  - id: s02
+    question: "What are the qSOFA components used in our screening protocol?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "2"
+    must_contain: ["22"]
+  - id: s03
+    question: "How quickly must the responding team be notified after a positive sepsis screen?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "3"
+    must_contain: ["15 minutes"]
+  - id: s04
+    question: "How soon is senior clinical review required after a positive screen?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "3"
+    must_contain: ["30 minutes"]
+  - id: s05
+    question: "How many blood culture sets are taken before antibiotics in the first-hour bundle?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "4"
+    must_contain: ["two sets"]
+  - id: s06
+    question: "What is the antibiotic administration target in the first-hour bundle?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "4"
+    must_contain: ["60 minutes"]
+  - id: s07
+    question: "What fluid volume is used for hypotension or lactate at or above 4 mmol/L?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "4"
+    must_contain: ["30 mL/kg"]
+  - id: s08
+    question: "When should lactate be repeated after the initial measurement?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "4"
+    must_contain: ["2 hours"]
+  - id: s09
+    question: "Who audits sepsis screening documentation and how often?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "5"
+    must_contain: ["monthly"]
+  - id: s10
+    question: "Who do we escalate to if a ward has no resident senior cover?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "3"
+    must_contain: ["on-call medical registrar"]
+  # ── Refusal cases (correct behavior = NOT_COVERED) ──────────────────
+  - id: r01
+    question: "What is our protocol for paediatric warfarin bridging?"
+    refusal: true
+  - id: r02
+    question: "How should we manage a direct oral anticoagulant before surgery?"
+    refusal: true
+  - id: r03
+    question: "What is our COVID-19 treatment protocol?"
+    refusal: true
+  - id: r04
+    question: "What are the MRI safety screening requirements?"
+    refusal: true

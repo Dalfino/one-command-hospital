@@ -1,0 +1,194 @@
+name: one-command-hospital
+
+networks:
+  hospital:
+    driver: bridge
+
+volumes:
+  openemr-db-data:
+  medplum-db-data:
+  openhim-mongo-data:
+  hapi-db-data:
+  models-cache:
+
+services:
+  # ─────────────────── EHR sandbox (system of record) ───────────────────
+  openemr-db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${OPENEMR_DB_ROOT_PASS}
+      MYSQL_DATABASE: openemr
+      MYSQL_USER: openemr
+      MYSQL_PASSWORD: ${OPENEMR_DB_PASS}
+    volumes: [openemr-db-data:/var/lib/mysql]
+    networks: [hospital]
+
+  openemr:
+    image: openemr/openemr:7.0.2
+    restart: unless-stopped
+    depends_on: [openemr-db]
+    ports: ["8300:80"]
+    environment:
+      MYSQL_HOST: openemr-db
+      MYSQL_PORT: "3306"
+      MYSQL_ROOT_PASS: ${OPENEMR_DB_ROOT_PASS}
+      MYSQL_DATABASE: openemr
+      MYSQL_USER: openemr
+      MYSQL_PASS: ${OPENEMR_DB_PASS}
+      OE_USER: ${OPENEMR_ADMIN_USER}
+      OE_PASS: ${OPENEMR_ADMIN_PASS}
+      # FHIR R4 endpoint: /apis/default/fhir (enabled by default; configure in UI)
+    networks: [hospital]
+
+  # ─────────────────── FHIR spine (our AI app lives here) ───────────────────
+  medplum-db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: medplum
+      POSTGRES_USER: medplum
+      POSTGRES_PASSWORD: ${MEDPLUM_DB_PASS}
+    volumes: [medplum-db-data:/var/lib/postgresql/data]
+    networks: [hospital]
+
+  medplum-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks: [hospital]
+
+  medplum:
+    image: ghcr.io/medplum/medplum-server:latest
+    restart: unless-stopped
+    depends_on: [medplum-db, medplum-redis]
+    ports: ["8080:8080"]
+    environment:
+      MEDPLUM_PORT: "8080"
+      MEDPLUM_BASE_URL: http://localhost:8080/
+      POSTGRES_HOST: medplum-db
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: medplum
+      POSTGRES_USERNAME: medplum
+      POSTGRES_PASSWORD: ${MEDPLUM_DB_PASS}
+      REDIS_HOST: medplum-redis
+    networks: [hospital]
+
+  # ─────────────────── Interop bus ───────────────────
+  openhim-mongo:
+    image: mongo:6
+    restart: unless-stopped
+    volumes: [openhim-mongo-data:/data/db]
+    networks: [hospital]
+
+  openhim-core:
+    image: jembi/openhim-core-js:latest
+    restart: unless-stopped
+    depends_on: [openhim-mongo]
+    ports:
+      - "5000:5000"    # HTTP transactions (mediator route)
+      - "5001:5001"    # HTTPS transactions
+      - "8085:8080"    # core API (remapped: 8080 belongs to Medplum on the host)
+    environment:
+      MONGO_URL: mongodb://openhim-mongo:27017/openhim
+    networks: [hospital]
+
+  # NOTE: the console ships with a static config that may default to core API on
+  # :8080 — after first boot, point it at localhost:8085 (see docs/architecture.md §ops).
+  openhim-console:
+    image: jembi/openhim-console:latest
+    restart: unless-stopped
+    depends_on: [openhim-core]
+    ports: ["9000:80"]
+    networks: [hospital]
+
+  # ─────────────────── Our AI services ───────────────────
+  deid-gate:
+    build: services/deid-gate
+    restart: unless-stopped
+    ports: ["8100:8000"]
+    networks: [hospital]
+
+  guideline-rag:
+    build: services/guideline-rag
+    restart: unless-stopped
+    ports: ["8101:8000"]
+    volumes:
+      - ./guidelines:/app/guidelines:ro
+    environment:
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://llm:8000/v1}
+      LLM_MODEL: ${LLM_MODEL:-BioMistral/BioMistral-7B}
+      RETRIEVAL_THRESHOLD: "0.18"
+    networks: [hospital]
+
+  verifier:
+    build: services/verifier
+    restart: unless-stopped
+    ports: ["8102:8000"]
+    networks: [hospital]
+
+  ai-mediator:
+    build: services/ai-mediator
+    restart: unless-stopped
+    ports: ["8103:3000"]
+    environment:
+      DEID_URL: http://deid-gate:8000/deid
+      RAG_URL: http://guideline-rag:8000/answer
+      MEDPLUM_FHIR_URL: http://medplum:8080/fhir
+      MEDPLUM_AUTH_JSON: ${MEDPLUM_AUTH_JSON:-}
+      OPENHIM_CORE_URL: https://openhim-core:8080
+    networks: [hospital]
+
+  # ─────────────────── LLM (profile: gpu) ───────────────────
+  llm:
+    profiles: ["gpu"]
+    image: vllm/vllm-openai:latest
+    restart: unless-stopped
+    ports: ["8104:8000"]
+    volumes: [models-cache:/root/.cache/huggingface]
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+    command: >
+      --model ${LLM_MODEL:-BioMistral/BioMistral-7B}
+      --max-model-len 8192
+      --gpu-memory-utilization 0.90
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks: [hospital]
+
+  # ─────────────────── Conformance (profile: conformance) ───────────────────
+  hapi-db:
+    profiles: ["conformance"]
+    image: postgres:16
+    environment:
+      POSTGRES_DB: hapi
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${HAPI_DB_PASS}
+    volumes: [hapi-db-data:/var/lib/postgresql/data]
+    networks: [hospital]
+
+  hapi-fhir:
+    profiles: ["conformance"]
+    image: hapiproject/hapi:latest
+    depends_on: [hapi-db]
+    ports: ["8105:8080"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://hapi-db:5432/hapi
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: ${HAPI_DB_PASS}
+      SPRING_DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
+      HAPI_FHIR_FHIR_VERSION: R4
+    networks: [hospital]
+
+  # ─────────────────── Synthetic patients (profile: patients) ───────────────────
+  synthea:
+    profiles: ["patients"]
+    build: tools/synthea
+    volumes:
+      - ./data/synthea:/work/output
+    command: ["-p", "${SYNTHEA_POPULATION:-100}"]
+    networks: [hospital]

@@ -75,3 +75,23 @@ Stage Summary:
 - FINAL: /home/z/my-project/download/Willow_Health_AI_Suite_Whitepaper.pdf (23 pages, ~544 KB, vector, cover+TOC+10 chapters+18 references)
 - Cover HTML source delivered at /home/z/my-project/download/Willow_Whitepaper_Cover.html
 - Assets/scripts persisted under /home/z/my-project/scripts/ (diagram_arch.html, diagram_fhir.html, gen_chart.py, gen_body.py, wp_content_a/b.py, merge_final.py)
+
+---
+Task ID: 9 (main agent)
+Task: Strategy pivot + scaffold the "One-Command Hospital — Guideline Copilot" flagship project
+
+Work Log:
+- Strategy evolved across user exchanges: improvising all repos rejected → independent-research framing → infra repos (#29-38) reviewed → 50-project list absorbed → ONE project locked: Guideline Copilot on the One-Command Hospital (OpenEMR sandbox, Medplum spine, OpenHIM bus, Presidio de-ID, BioMistral-7B vLLM, Meditron corpus as KB, medspaCy/scispaCy verifier, Synthea patients, HAPI conformance CI).
+- Scaffolded /home/z/my-project/download/one-command-hospital/: README, docker-compose.yml (10 services + gpu/patients/conformance profiles), .env.example, Makefile, .gitignore.
+- Knowledge base: guidelines/manifest.yaml (edition/expiry tracking = improvement #2) + 2 SYNTHETIC seed protocols (anticoagulation bridging v3.0, sepsis screening ed.2) with numbered sections.
+- Eval harness: eval/qa_seed.yaml (24 pairs: 20 traced + 4 refusal traps) + run_eval.py (BM25 retrieval scoring, optional full-mode vs live RAG, CI gate at 80%, report.md). Fixed typo (f-"-) and refusal-trap grading bug en route.
+- Services: deid-gate (FastAPI+Presidio), guideline-rag (BM25 → citation-forced prompt → vLLM, NOT_COVERED refusal, edition-stamped citations, extractive fallback), verifier (heuristic grounding/negation v0, ConText in Phase 1), ai-mediator (Node/Express: deid→RAG→verify→FHIR Communication with provenance + human_action).
+- Stubs: smart-app/README (SMART on FHIR widget, Phase 1), tools/synthea/Dockerfile (two-stage Maven build, output to ./data/synthea).
+- Docs: architecture.md (request lifecycle, safety layers, KILL CRITERIA, ops notes) + improvements.md (6 improvements with verify steps).
+- Validated: py_compile all Python OK, YAML OK, eval green: 18/20 retrieval hits (90%, BM25 on; a03/s01 genuine misses → Phase 1 vector retrieval), CI gate passed.
+
+Stage Summary:
+- FLAGSHIP SCAFFOLD COMPLETE + PROVEN: eval harness runs green in retrieval-only mode (90%).
+- The six improvements are implemented or stubbed with verify paths; compose file is the "one command" artifact.
+- Prior deliverables (Willow portal at / route, whitepaper PDF) reflect the OLD all-8-improvise strategy — superseded by this architecture; portal/whitepaper need a content refresh pass to match the new one-project focus (pending user go-ahead).
+- Next: Phase 1 (SMART widget, Bot JWT auth, medspaCy ConText verifier, vector retrieval, 200-question eval), then portal+whitepaper refresh.

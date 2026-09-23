@@ -1,0 +1,115 @@
+# One-Command Hospital — Guideline Copilot (v0 scaffold)
+
+A clinician asks a protocol question **inside the EHR** and gets a cited answer from the
+hospital's own guidelines — or an honest refusal. Zero PHI reaches the AI. One GPU. One command.
+
+> **Status: v0 scaffold.** Stack composition, service contracts, seed corpus and eval harness
+> are real and runnable-adjacent; service logic is a working skeleton meant to be hardened in
+> Phase 1. See "Honest limitations" below.
+
+## The 60-second version
+
+- **OpenEMR** plays the hospital EHR (ONC-certified, native FHIR R4).
+- **Medplum** is the FHIR spine where our AI app lives (auth, Bots, SMART launch).
+- **OpenHIM** routes clinical events through our **AI Mediator** pattern.
+- **Presidio + medspaCy** scrub identifiers *before* anything reaches an LLM.
+- **BioMistral-7B** (vLLM, on-prem) answers **only** from retrieved guideline sections,
+  with citations like `[ANTICOAG-BRIDGE §3]` — or says `NOT_COVERED`.
+- **medspaCy/scispaCy verifier** double-checks the answer against its cited sources.
+- **Synthea** fills the hospital with realistic fake patients, so nothing real is ever at risk.
+- **HAPI FHIR** validates every resource we write (conformance CI, not runtime).
+
+## Architecture
+
+```
+ Clinician (OpenEMR / SMART widget)
+        │  question (+ note context)
+        ▼
+ OpenHIM bus ──► ai-mediator ──► deid-gate (Presidio + medspaCy)   ← PHI dies here
+                                     │  scrubbed text
+                                     ▼
+                              guideline-rag (BM25 → BioMistral via vLLM)
+                                     │  cited answer or NOT_COVERED
+                                     ▼
+                              verifier (entity/negation grounding check)
+                                     │
+                                     ▼
+                       FHIR Communication (+ provenance) → Medplum → EHR UI
+                       audit event → append-only log
+```
+
+## Quickstart
+
+```bash
+cp .env.example .env        # set passwords
+make up                     # core stack (no GPU needed for eval-only mode)
+make up-gpu                 # adds vLLM serving BioMistral-7B (needs 1× ≥24GB GPU)
+make patients               # generate synthetic population into ./data/synthea
+make eval                   # run retrieval + grounding eval → eval/report.md
+```
+
+| What | Where |
+|---|---|
+| OpenEMR (first run: setup wizard) | http://localhost:8300 |
+| Medplum API | http://localhost:8080 |
+| OpenHIM console (admin@openhim.org / openhim-demo) | http://localhost:9000 |
+| de-id gate / RAG / verifier / mediator | :8100 / :8101 / :8102 / :8103 |
+| vLLM (OpenAI-compatible) | :8104 |
+| HAPI FHIR (conformance profile) | :8105 |
+
+## The six improvements (vs. upstream)
+
+| # | Improvement | Upstream today | Ours |
+|---|---|---|---|
+| 1 | Citation-forced RAG + hard refusal | BioMistral answers freely, hallucinates confidently | Answers only from retrieved sections; must cite; else `NOT_COVERED` |
+| 2 | Guideline version control | Meditron corpus = pretraining fuel, no versioning | Every answer stamped with corpus id + edition + section |
+| 3 | NLP-as-verifier | medspaCy/scispaCy used for preprocessing | Used *post-generation*: citation validity, negation & entity grounding |
+| 4 | AI Mediator pattern | OpenHIM mediators are hand-rolled per project | One reusable contract: event → de-ID → AI → FHIR writeback w/ provenance |
+| 5 | Known-answer eval set | Synthea covers patients, nobody covers KB eval | 20+ seeded Q/A pairs traced to protocol sections, scored in CI |
+| 6 | One-command assembly | Good individual docs, no combined story | This repo: `make up` |
+
+## Repo map
+
+```
+guidelines/        seed knowledge base (SYNTHETIC protocols + manifest w/ editions)
+eval/              known-answer QA seed + runner (retrieval & grounding metrics)
+services/
+  deid-gate/       FastAPI + Presidio PHI scrubber          :8100
+  guideline-rag/   retrieval + generation + citation forcing :8101
+  verifier/        grounding/negation checks                :8102
+  ai-mediator/     OpenHIM mediator, FHIR writeback         :8103
+smart-app/         SMART on FHIR widget (stub, Phase 1)
+tools/synthea/     synthetic patient generator image
+docs/              architecture.md, improvements.md
+```
+
+## Safety model (non-negotiables)
+
+1. De-ID **before** LLM contact — the model never sees identifiers.
+2. Hard refusal when retrieval confidence is low. No source, no answer.
+3. Advisory-only outputs; a human always acts. Every answer carries provenance.
+4. Append-only audit log: question, sources, edition, model+version, response, action.
+5. Staleness alarms: answers refuse (or warn) when a guideline edition is expired.
+6. Kill criteria defined in `docs/architecture.md` — the failure story is designed.
+
+## Honest limitations (v0)
+
+- Service logic is a hardened skeleton: heuristics in `verifier`, BM25 retrieval
+  (vector index planned), naive FHIR auth in mediator (JWT Bot auth planned).
+- SMART widget is a stub. Eval set is seeded (~24 pairs), target is 200.
+- `openhim-console` may need its core-API endpoint tweaked after first boot (noted in compose).
+- Seed protocols are **synthetic**, authored for testing — never medical advice.
+
+## Roadmap
+
+1. **Phase 0 (this repo):** stack up, eval harness green, synthetic hospital populated.
+2. **Phase 1:** SMART widget in OpenEMR, Medplum Bot auth, vector retrieval, 200-question eval.
+3. **Phase 2:** Orthanc + OHIF imaging layer, MedGemma pre-read (Recipe B).
+4. **Phase 3:** MIMIC-code validation pathway, federated testbed, device layer.
+
+## Licensing note
+
+Upstream components keep their licenses: OpenEMR (GPL), Medplum (Apache-2.0),
+OpenHIM (MPL-2.0), Synthea (Apache-2.0), HAPI (Apache-2.0), Presidio (MIT),
+medspaCy (MIT), scispaCy (Apache-2.0), BioMistral (Apache-2.0), Meditron corpus
+(Llama-2 community terms — corpus used for research here). Verify before any commercial use.

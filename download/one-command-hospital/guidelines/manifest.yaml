@@ -1,0 +1,20 @@
+# Guideline corpus manifest — the "library card catalog".
+# Improvement #2: every document carries an edition + effective date; the RAG service
+# stamps every answer with these fields and refuses (or warns) on expired editions.
+corpus:
+  - id: ANTICOAG-BRIDGE
+    file: corpus/anticoagulation-bridging-v3.md
+    title: "Peri-operative Anticoagulation Bridging Protocol"
+    edition: "v3.0"
+    effective: "2026-03-01"
+    expires: "2028-03-01"
+    status: active
+    synthetic: true
+  - id: SEPSIS-SCR
+    file: corpus/sepsis-screening-ed2.md
+    title: "Inpatient Sepsis Screening & Escalation Protocol"
+    edition: "ed.2"
+    effective: "2026-01-15"
+    expires: "2028-01-15"
+    status: active
+    synthetic: true

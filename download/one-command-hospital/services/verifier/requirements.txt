@@ -1,0 +1,5 @@
+fastapi>=0.111
+uvicorn>=0.30
+# Phase 1 upgrade path (improvement #3 full form):
+#   medspacy>=1.3   (ConText negation/temporality)
+#   scispacy + en_ner_bc5cdr_md (UMLS-adjacent entity overlap)
