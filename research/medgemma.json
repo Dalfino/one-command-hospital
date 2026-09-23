@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://developers.google.com/health-ai-developer-foundations/medgemma/model-card",
+    "name": "MedGemma 1.5 model card | Health AI Developer",
+    "snippet": "Apr 21, 2026 — MedGemma utilizes a SigLIP image encoder that has been specifically pre-trained on a variety of de-identified medical data, including chest X - ... Read more",
+    "host_name": "developers.google.com",
+    "rank": 0,
+    "date": "Apr 21, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org",
+    "name": "MedGemma 1.5 Technical Report",
+    "snippet": "Apr 6, 2026 — MedGemma 1.5 improves on text-based clinical knowledge and reasoning, improving by 5% on MedQA accuracy and 22% on EHRQA accuracy.",
+    "host_name": "arxiv.org",
+    "rank": 1,
+    "date": "Apr 6, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://research.google",
+    "name": "MedGemma: Our most capable open models for health AI",
+    "snippet": "Jul 9, 2025 — We're announcing new multimodal models in the MedGemma collection, our most capable open models for health AI development. Read more",
+    "host_name": "research.google",
+    "rank": 2,
+    "date": "Jul 9, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co",
+    "name": "google/medgemma-27b-it",
+    "snippet": "MedGemma is a collection of Gemma 3 variants that are trained for performance on medical text and image comprehension. using chest X - ray , pathology , ...",
+    "host_name": "huggingface.co",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://modelscope.cn",
+    "name": "MedGemma model card",
+    "snippet": "May 20, 2025 — Its LLM component is trained on a diverse set of medical data, including medical text relevant to radiology images, chest - x rays , histopathology ... Read more",
+    "host_name": "modelscope.cn",
+    "rank": 4,
+    "date": "May 20, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://medgemma.pro",
+    "name": "Google's Breakthrough in Open Medical Multimodal Models",
+    "snippet": "Jan 16, 2025 — MedGemma is the first truly open-source medical multimodal LLM , ly processes text and medical images, supporting chest X - rays , pathology , ...",
+    "host_name": "medgemma.pro",
+    "rank": 5,
+    "date": "Jan 16, 2025",
+    "favicon": ""
+  }
+]

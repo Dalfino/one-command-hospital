@@ -1,0 +1,65 @@
+[
+  {
+    "url": "https://iternal.ai",
+    "name": "On-Prem LLM Deployment (2026): GPU Sizing, vLLM & Air",
+    "snippet": "Size VRAM first (a 7B model needs one 24 GB GPU ; a 70B model needs 2–4x 80 GB GPUs ), then serve it with vLLM or NVIDIA NIM. At sustained volume, on-prem ... Read more",
+    "host_name": "iternal.ai",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://blog.ovhcloud.com",
+    "name": "GPU for LLM Inferencing Guide",
+    "snippet": "Jul 24, 2025 — GPU for LLM inferencing guide : scope your needs, pick the right GPU by memory and quantization, and choose a deployment architecture.",
+    "host_name": "blog.ovhcloud.com",
+    "rank": 1,
+    "date": "Jul 24, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.spheron.network",
+    "name": "Deploy Small Language Models on GPU Cloud",
+    "snippet": "Apr 14, 2026 — A practical guide to deploying Phi-3, Mistral 7B, Gemma 2 9B, and Llama 3.2 on GPU cloud. Covers vLLM , Ollama , LoRA fine-tuning, ...",
+    "host_name": "www.spheron.network",
+    "rank": 2,
+    "date": "Apr 14, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.sitepoint.com",
+    "name": "Enterprise Local LLM Deployment: vLLM, GPUs",
+    "snippet": "Mar 20, 2026 — A comprehensive pillar guide on architecting, deploying, and managing local Large Language Models (LLMs) for enterprise and production use ...",
+    "host_name": "www.sitepoint.com",
+    "rank": 3,
+    "date": "Mar 20, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.gpu-mart.com",
+    "name": "Self-Hosted LLM Guide: GPU Selection, VRAM and",
+    "snippet": "This guide explains how to choose an LLM server by comparing LLM GPU requirements, VRAM sizing , deployment frameworks, and benchmark results. Always validate ... Read more",
+    "host_name": "www.gpu-mart.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://omc.cloud",
+    "name": "LLM Inference and API Deployment",
+    "snippet": "LLM Inference & API Deployment . Deploy large language models for production inference with vLLM , TGI, Ollama , or custom serving stacks on NVIDIA GPUs . Read more",
+    "host_name": "omc.cloud",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://vrlatech.com",
+    "name": "LLM Inference On-Premise vs Cloud: A 2026 Cost",
+    "snippet": "Apr 3, 2026 — The 4U 8- GPU configuration with dual AMD EPYC 9375F processors and up to 8× RTX PRO 6000 Blackwell delivers over 1.1TB of combined GPU VRAM — ... Read more",
+    "host_name": "vrlatech.com",
+    "rank": 6,
+    "date": "Apr 3, 2026",
+    "favicon": ""
+  }
+]

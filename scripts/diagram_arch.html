@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1000px; background: #ffffff; font-family: 'Liberation Sans', Arial, sans-serif; }
+  .canvas { width: 1000px; padding: 24px 28px; background: #ffffff; }
+  .layer { border-radius: 10px; border: 1.5px solid #b7d3c5; background: #eef3f0; padding: 14px 20px 15px; display: flex; align-items: center; gap: 18px; }
+  .layer .head { width: 218px; flex-shrink: 0; }
+  .layer .tag { font-size: 13px; font-weight: 700; letter-spacing: 1.6px; color: #298959; text-transform: uppercase; margin-bottom: 3px; }
+  .layer .name { font-size: 25px; font-weight: 700; color: #232725; line-height: 1.12; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; min-width: 0; }
+  .chip { font-size: 18px; color: #2e3a34; background: #ffffff; border: 1px solid #b7d3c5; border-radius: 6px; padding: 6px 11px; line-height: 1.25; }
+  .fabric { border-width: 2.5px; border-color: #298959; background: #e4eae7; }
+  .fabric .tag { color: #1f6e45; }
+  .gap { height: 34px; display: flex; align-items: center; justify-content: center; gap: 220px; }
+  .arrows { display: flex; gap: 6px; align-items: center; }
+  .note { margin-top: 16px; font-size: 16px; color: #77817c; text-align: center; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="layer">
+    <div class="head"><div class="tag">Layer 4</div><div class="name">Experience</div></div>
+    <div class="chips">
+      <div class="chip">Willow Writer</div><div class="chip">Willow Sage</div><div class="chip">Willow Charts</div><div class="chip">Willow Pulse</div><div class="chip">Willow Triage</div>
+    </div>
+  </div>
+  <div class="gap"><div class="arrows"><svg width="14" height="26" viewBox="0 0 14 26"><path d="M7 26 L1 15 L13 15 Z" fill="#3a7d5b"/><rect x="5" y="0" width="4" height="16" fill="#3a7d5b"/></svg><svg width="14" height="26" viewBox="0 0 14 26"><path d="M7 0 L1 11 L13 11 Z" fill="#b7d3c5"/><rect x="5" y="10" width="4" height="16" fill="#b7d3c5"/></svg></div></div>
+  <div class="layer">
+    <div class="head"><div class="tag">Layer 3</div><div class="name">Data &amp; Integration</div></div>
+    <div class="chips">
+      <div class="chip">HL7 FHIR R4 Gateway</div><div class="chip">SMART on FHIR Apps</div><div class="chip">Event Bus (ADT / Discharge)</div><div class="chip">Synthetic Test Harness</div>
+    </div>
+  </div>
+  <div class="gap"><div class="arrows"><svg width="14" height="26" viewBox="0 0 14 26"><path d="M7 26 L1 15 L13 15 Z" fill="#3a7d5b"/><rect x="5" y="0" width="4" height="16" fill="#3a7d5b"/></svg><svg width="14" height="26" viewBox="0 0 14 26"><path d="M7 0 L1 11 L13 11 Z" fill="#b7d3c5"/><rect x="5" y="10" width="4" height="16" fill="#b7d3c5"/></svg></div></div>
+  <div class="layer">
+    <div class="head"><div class="tag">Layer 2</div><div class="name">Intelligence</div></div>
+    <div class="chips">
+      <div class="chip">vLLM Serving Pool</div><div class="chip">Model Router</div><div class="chip">MedGemma 4B / 27B</div><div class="chip">BioMistral-7B + RAG</div><div class="chip">Clinical-Longformer / T5</div><div class="chip">BioGPT Miner</div>
+    </div>
+  </div>
+  <div class="gap"><div class="arrows"><svg width="14" height="26" viewBox="0 0 14 26"><path d="M7 26 L1 15 L13 15 Z" fill="#3a7d5b"/><rect x="5" y="0" width="4" height="16" fill="#3a7d5b"/></svg><svg width="14" height="26" viewBox="0 0 14 26"><path d="M7 0 L1 11 L13 11 Z" fill="#b7d3c5"/><rect x="5" y="10" width="4" height="16" fill="#b7d3c5"/></svg></div></div>
+  <div class="layer fabric">
+    <div class="head"><div class="tag">Layer 1</div><div class="name">Trust Fabric</div></div>
+    <div class="chips">
+      <div class="chip">De-identification Gate</div><div class="chip">Guardrails + Citation Grounding</div><div class="chip">Human-in-the-Loop Review</div><div class="chip">Audit Trail + Model Registry</div><div class="chip">Drift Monitoring</div><div class="chip">Governance Console</div>
+    </div>
+  </div>
+  <div class="note">Every model call is wrapped by the Trust Fabric: no PHI reaches a model un-de-identified, no output reaches the chart un-reviewed.</div>
+</div>
+</body>
+</html>

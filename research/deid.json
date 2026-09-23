@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://pmc.ncbi.nlm.nih.gov",
+    "name": "An Extensible Evaluation Framework Applied to Clinical Text",
+    "snippet": "by PM Heider · 2024 · Cited by 8 — CliniDeID and Philter had the highest recall for select categories , while CliniDeID and NeuroNER had the highest recall across all categories.",
+    "host_name": "pmc.ncbi.nlm.nih.gov",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://censinet.com",
+    "name": "2025 Benchmark: De-Identification Tools",
+    "snippet": "Dec 13, 2025 — Compare nine de-identification solutions for clinical text, structured data, and DICOM imaging, with strengths, use cases, and compliance ...",
+    "host_name": "censinet.com",
+    "rank": 1,
+    "date": "Dec 13, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.hhs.gov",
+    "name": "Guidance Regarding Methods for De-identification of",
+    "snippet": "Feb 3, 2025 — This page provides guidance about methods and approaches to achieve de - identification in accordance with the HIPAA Privacy Rule.",
+    "host_name": "www.hhs.gov",
+    "rank": 2,
+    "date": "Feb 3, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.medrxiv.org",
+    "name": "Building a Best-in-Class De-identification Tool for",
+    "snippet": "Dec 23, 2020 — Safe Harbor implementation, We compared the performance of our approach on the 2014 I2B2 test dataset with six other established de - ...",
+    "host_name": "www.medrxiv.org",
+    "rank": 3,
+    "date": "Dec 23, 2020",
+    "favicon": ""
+  },
+  {
+    "url": "https://intuitionlabs.ai",
+    "name": "Open Source PHI De-Identification: A Technical Review",
+    "snippet": "Nov 15, 2025 — The open-source tools we examine typically target HIPAA Safe Harbor categories and aim for recall > 95% on representative corpora () (). Read more",
+    "host_name": "intuitionlabs.ai",
+    "rank": 4,
+    "date": "Nov 15, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://guides.library.jhu.edu",
+    "name": "Guides: Protecting Human Subject Identifiers: Software for De",
+    "snippet": "A command-line based clinical text de - identification software that removes protected health information (PHI) from any plain text file. · GitHub - BCHSI/ philter - ... Read more",
+    "host_name": "guides.library.jhu.edu",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.invene.com",
+    "name": "Software to Identify PHI: Complete 2025 Guide & Tools",
+    "snippet": "Jun 2, 2025 — The Safe Harbor Method HIPAA provides two main pathways for de - identification , and the Safe Harbor method is the more commonly used approach.",
+    "host_name": "www.invene.com",
+    "rank": 6,
+    "date": "Jun 2, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nature.com",
+    "name": "Protected Health Information filter (Philter): accurately and",
+    "snippet": "by B Norgeot · 2020 · Cited by 152 — To build a new de - identification tool , we created the largest manually annotated clinical note corpus for PHI and develop a customizable open- ... Read more",
+    "host_name": "www.nature.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

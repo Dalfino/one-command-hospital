@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://www.microsoft.com",
+    "name": "Generative Pre-trained Transformer for Biomedical Text",
+    "snippet": "we get 44.98%, DDI end-to-end relation extraction tasks respectively, and 78.2% accuracy on PubMedQA , creating a new record. Our larger model BioGPT -Large ...",
+    "host_name": "www.microsoft.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://ai.azure.com",
+    "name": "microsoft-biogpt | Model Catalog",
+    "snippet": "we get 44.98%, 38.42% DDI end-to-end relation extraction tasks, respectively, and 78.2% accuracy on PubMedQA , creating a new record.",
+    "host_name": "ai.azure.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org",
+    "name": "Generative Pre-trained Transformer for Biomedical Text",
+    "snippet": "by R Luo · 2022 · Cited by 2151 — BioGPT achieves state-of-the-art results on four benchmarks : BC5CDR, KD-DTI and DDI end-to-end relation extraction task, and PubMedQA question ...",
+    "host_name": "arxiv.org",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co",
+    "name": "microsoft/BioGPT-Large-PubMedQA",
+    "snippet": "Mar 6, 2024 — We evaluate BioGPT on six biomedical natural language processing tasks and demonstrate that our model outperforms previous models on most tasks. Read more",
+    "host_name": "huggingface.co",
+    "rank": 3,
+    "date": "Mar 6, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com",
+    "name": "microsoft/BioGPT",
+    "snippet": "Text Generation with BioGPT-Large · Question Answering with BioGPT-Large-PubMedQA. License. BioGPT is MIT-licensed . The license applies to the pre-trained ... Read more",
+    "host_name": "github.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.researchgate.net",
+    "name": "Generative Pre-trained Transformer for Biomedical Text",
+    "snippet": "Especially, we get 44.98%, 38.42% and 40.76% DDI end-to-end relation extraction tasks respectively, and 78.2% accuracy on PubMedQA , creating a new record.",
+    "host_name": "www.researchgate.net",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.aimodels.fyi",
+    "name": "biogpt: Text-to-Text model — overview, use cases",
+    "snippet": "Apr 11, 2026 — The model achieves 78.2% accuracy on PubMedQA , a benchmark requiring comprehension and reasoning over biomedical abstracts.",
+    "host_name": "www.aimodels.fyi",
+    "rank": 6,
+    "date": "Apr 11, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.walturn.com",
+    "name": "Introducing BioGPT by Microsoft",
+    "snippet": "Feb 22, 2023 — Microsoft has introduced BioGPT , an advanced language model trained on biological data from PubMed. With 357 million parameters, ... Read more",
+    "host_name": "www.walturn.com",
+    "rank": 7,
+    "date": "Feb 22, 2023",
+    "favicon": ""
+  }
+]

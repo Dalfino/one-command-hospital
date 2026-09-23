@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://www.physionet.org",
+    "name": "Clinical-T5: Large Language Models Built Using MIMIC",
+    "snippet": "by E Lehman · Cited by 72 — We train 4 different clinical T5 models on the union of MIMIC - III and IV notes. These models are pretrained using masked language modeling (MLM ...",
+    "host_name": "www.physionet.org",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://pmc.ncbi.nlm.nih.gov",
+    "name": "A comparative study of pretrained language models for long",
+    "snippet": "by Y Li · 2022 · Cited by 221 — The results demonstrate that Clinical-Longformer and Clinical-BigBird consistently and significantly outperform ClinicalBERT and other short- ... Read more",
+    "host_name": "pmc.ncbi.nlm.nih.gov",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.emergentmind.com",
+    "name": "Clinical Longformer for Clinical NLP",
+    "snippet": "Nov 27, 2025 — Clinical Longformer is a suite of language models using sparse attention and domain-specific pretraining to manage long clinical texts such as ...",
+    "host_name": "www.emergentmind.com",
+    "rank": 2,
+    "date": "Nov 27, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org",
+    "name": "Clinical-Longformer and Clinical-BigBird: Transformers for",
+    "snippet": "Apr 15, 2022 — ClinicalBERT [17] , initialized from BioBERT, was further pre-trained using clinical notes that were also extracted from MIMIC - III . Read more",
+    "host_name": "arxiv.org",
+    "rank": 3,
+    "date": "Apr 15, 2022",
+    "favicon": ""
+  },
+  {
+    "url": "https://sparknlp.org",
+    "name": "Clinical Longformer | clinical_longformer",
+    "snippet": "Feb 8, 2022 — Clinical-Longformer is a clinical knowledge enriched version of Longformer that was further pretrained using MIMIC-III clinical notes. It ...",
+    "host_name": "sparknlp.org",
+    "rank": 4,
+    "date": "Feb 8, 2022",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co",
+    "name": "yikuan8/Clinical-Longformer",
+    "snippet": "Jan 27, 2022 — Clinical-Longformer is a clinical knowledge enriched version of Longformer that was further pre-trained using MIMIC-III clinical notes. Read more",
+    "host_name": "huggingface.co",
+    "rank": 5,
+    "date": "Jan 27, 2022",
+    "favicon": ""
+  },
+  {
+    "url": "https://bio.tools",
+    "name": "Clinical-Longformer",
+    "snippet": "Clinical-Longformer is a clinical knowledge enriched version of Longformer that was further pre-trained using MIMIC-III clinical notes.",
+    "host_name": "bio.tools",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com",
+    "name": "simonlevine/clinical-longformer",
+    "snippet": "Here, we benchmark various Transformer-based encoders (BERT, RoBERTa, Longformer ) on electronic health records data from the MIMIC - III data lake. We also ... Read more",
+    "host_name": "github.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

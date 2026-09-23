@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://ai.google.dev",
+    "name": "Gemma Terms of Use | Google AI for Developers",
+    "snippet": "You must include the use restrictions referenced in Section 3.2 as an enforceable provision in any agreement (e.g., license agreement, terms of use , etc.) ... Read more",
+    "host_name": "ai.google.dev",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://developers.google.com/health-ai-developer-foundations/medgemma/model-card",
+    "name": "MedGemma 1.5 model card | Health AI Developer",
+    "snippet": "Apr 21, 2026 — Developers are expected to fine - tune MedGemma for improved performance on their use case. Consult the Intended use section for more details. Read more",
+    "host_name": "developers.google.com",
+    "rank": 1,
+    "date": "Apr 21, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.mindstudio.ai",
+    "name": "What Is Gemma 4's Apache 2.0 License? Why It Matters",
+    "snippet": "Apr 4, 2026 — Gemma 4's Apache 2.0 license permits unrestricted commercial use , fine - tuning , modification, and redistribution — including of derivative models ... Read more",
+    "host_name": "www.mindstudio.ai",
+    "rank": 2,
+    "date": "Apr 4, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co",
+    "name": "google/medgemma-4b-pt",
+    "snippet": "May 20, 2025 — To access MedGemma on Hugging Face, you're required to review and agree to Health AI Developer Foundation's terms of use . Read more",
+    "host_name": "huggingface.co",
+    "rank": 3,
+    "date": "May 20, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://wcr.legal",
+    "name": "Google Gemma: The Hidden Risks of an “Almost Open” License",
+    "snippet": "Mar 6, 2026 — The Gemma Terms of Use explicitly apply to derivative models — any model that is fine - tuned on, distilled from, or built on top of Gemma weights ... Read more",
+    "host_name": "wcr.legal",
+    "rank": 4,
+    "date": "Mar 6, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.therundown.ai",
+    "name": "MedGemma: Models, License, Hardware & Use Cases",
+    "snippet": "Aug 29, 2026 — The weights are free for research and commercial use . Fine - tune , prompt, or orchestrate a healthcare-specific base model. The model weights are ...",
+    "host_name": "www.therundown.ai",
+    "rank": 5,
+    "date": "Aug 29, 2026",
+    "favicon": ""
+  }
+]

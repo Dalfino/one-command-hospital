@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://developers.google.com/health-ai-developer-foundations/medgemma/model-card",
+    "name": "MedGemma 1.5 model card | Health AI Developer",
+    "snippet": "Apr 21, 2026 — MedGemma 1.5 4B expands support for several new medical imaging and data processing applications , including: High-dimensional medical imaging: ...",
+    "host_name": "developers.google.com",
+    "rank": 0,
+    "date": "Apr 21, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org",
+    "name": "MedGemma Technical Report",
+    "snippet": "Apr 6, 2026 — In this technical report, we introduce MedGemma , a new collection of medical vision–language foundation models based on Gemma 3 4B and 27B .",
+    "host_name": "arxiv.org",
+    "rank": 1,
+    "date": "Apr 6, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co",
+    "name": "google/medgemma-27b-it",
+    "snippet": "MedGemma 27B multimodal has pre-training on medical image, medical record and medical record comprehension tasks. MedGemma 27B text-only has been trained ...",
+    "host_name": "huggingface.co",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://medgemma.pro",
+    "name": "Google's Breakthrough in Open Medical Multimodal Models",
+    "snippet": "Jan 16, 2025 — ... MedGemma uses an open-weight license allowing download and local deployment . As of January 2026, MedGemma and HAI-DEF series models have ...",
+    "host_name": "medgemma.pro",
+    "rank": 3,
+    "date": "Jan 16, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.therundown.ai",
+    "name": "MedGemma: Models, License, Hardware & Use Cases",
+    "snippet": "Aug 29, 2026 — Explore Google's MedGemma 1.5 and 27B health AI models , including medical image and text use cases, hardware, licensing, deployment, ...",
+    "host_name": "www.therundown.ai",
+    "rank": 4,
+    "date": "Aug 29, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com",
+    "name": "Google-Health/medgemma",
+    "snippet": "Developers can use MedGemma to accelerate building healthcare-based AI applications . MedGemma comes in two variants: a 4B multimodal version and a 27B text-only ...",
+    "host_name": "github.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://research.google",
+    "name": "MedGemma: Our most capable open models for health AI",
+    "snippet": "Jul 9, 2025 — The MedGemma collection includes variants in 4B and 27B sizes, both of which now accept image and text inputs and produce text outputs. MedGemma ...",
+    "host_name": "research.google",
+    "rank": 6,
+    "date": "Jul 9, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://dr7.ai",
+    "name": "Run MedGemma Free Online — Medical AI Demo (4B & 27B)",
+    "snippet": "Try Google's MedGemma medical AI free in your browser — no setup. Chat with the 4B multimodal and 27B models , upload medical images, get instant analysis.",
+    "host_name": "dr7.ai",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

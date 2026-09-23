@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://pmc.ncbi.nlm.nih.gov",
+    "name": "Predicting 30-day hospital readmissions using ClinicalT5 with",
+    "snippet": "by SR Pandey · 2025 · Cited by 12 — This study proposes a framework that combines structured electronic health record ( EHR ) data with unstructured clinical notes , using embeddings ... Read more",
+    "host_name": "pmc.ncbi.nlm.nih.gov",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org",
+    "name": "ClinicalBERT: Modeling Clinical Notes and Predicting",
+    "snippet": "Nov 29, 2020 — We build a model to predict hospital readmission from clinical notes . Compared to benchmark language models, ClinicalBERT accurately predicts ... Read more",
+    "host_name": "arxiv.org",
+    "rank": 1,
+    "date": "Nov 29, 2020",
+    "favicon": ""
+  },
+  {
+    "url": "https://journals.plos.org",
+    "name": "Predicting 30-day hospital readmissions using ClinicalT5 with",
+    "snippet": "by SR Pandey · 2025 · Cited by 8 — This study proposes a framework that combines structured electronic health record ( EHR ) data with unstructured clinical notes , using embeddings ... Read more",
+    "host_name": "journals.plos.org",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.alphaxiv.org",
+    "name": "ClinicalBERT: Modeling Clinical Notes and Predicting",
+    "snippet": "The fine - tuning architecture adds a classification layer to predict readmission probability from the [CLS] token representation.",
+    "host_name": "www.alphaxiv.org",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com",
+    "name": "ClinicalBERT: Using Deep Learning Transformer Model",
+    "snippet": "ClinicalBert is fine-tuned on a task specific to clinical data: readmission prediction . The model is fed a patient's clinical notes, and the patient's risk of ... Read more",
+    "host_name": "github.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.sciencedirect.com",
+    "name": "Multimodal fine-tuning of clinical language models for",
+    "snippet": "by A Henriksson · 2023 · Cited by 24 — There are, however, numerous examples of unimodal clinical prediction models based solely on the use of unstructured EHR data in the form of clinical notes . Read more",
+    "host_name": "www.sciencedirect.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.semanticscholar.org",
+    "name": "Predicting 30-day hospital readmissions using ClinicalT5",
+    "snippet": "SciBERT yields the best performance when applied in the medical domain, improv ing current hospital readmission predictions using clinical notes on MIMIC data ...",
+    "host_name": "www.semanticscholar.org",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.mdpi.com",
+    "name": "A Comparative Study of Structured and Narrative EHR",
+    "snippet": "by Z He · 2025 · Cited by 1 — For long-sequence modeling, we used the ClinicalLongformer , which was pre-trained on large-scale biomedical corpora and supports extended input windows. ...",
+    "host_name": "www.mdpi.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

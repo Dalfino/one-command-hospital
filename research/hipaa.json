@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://www.definite.app",
+    "name": "HIPAA-Compliant LLM: The 4 Ways to Run One (2026)",
+    "snippet": "Jun 7, 2026 — Four ways to run an LLM on PHI: cloud model endpoints under a BAA , dedicated capacity, self-hosted open weights, and on-prem GPUs.",
+    "host_name": "www.definite.app",
+    "rank": 0,
+    "date": "Jun 7, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.hipaavault.com",
+    "name": "HIPAA Compliant LLM: How to Run It Securely",
+    "snippet": "Apr 3, 2026 — Learn how to run a HIPAA compliant LLM with BAAs, encryption, risk analysis, and secure deployment for healthcare AI.",
+    "host_name": "www.hipaavault.com",
+    "rank": 1,
+    "date": "Apr 3, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://cohere.com",
+    "name": "HIPAA Business Associate Agreements (BAAs)",
+    "snippet": "Nov 13, 2025 — Cohere now offers a HIPAA-compliant Business Associate Agreement (BAA) so healthcare customers can build secure custom models with us.",
+    "host_name": "cohere.com",
+    "rank": 2,
+    "date": "Nov 13, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.hhs.gov",
+    "name": "Business Associates",
+    "snippet": "Jul 30, 2026 — A covered entity is not required to have a BAA to disclose PHI about an individual to a health care provider for treatment purposes, such as ... Read more",
+    "host_name": "www.hhs.gov",
+    "rank": 3,
+    "date": "Jul 30, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.hklaw.com",
+    "name": "Data Centers and HIPAA Requirements | Insights",
+    "snippet": "May 27, 2025 — Additionally, business associates are required by law to comply with applicable privacy provisions of their business associate agreements with ... Read more",
+    "host_name": "www.hklaw.com",
+    "rank": 4,
+    "date": "May 27, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.vanta.com",
+    "name": "Understanding the HIPAA business associate agreement",
+    "snippet": "To encourage accountability, HIPAA requires covered entities to enter into a business associate agreement ( BAA ) with their external partners that access PHI . Read more",
+    "host_name": "www.vanta.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.hakunamatatatech.com",
+    "name": "HIPAA Compliant LLM Explained What Healthcare Teams",
+    "snippet": "Feb 23, 2026 — In America, if your LLM touches Protected Health Information ( PHI ), you need a Business Associate Agreement ( BAA ). Without this document, your ... Read more",
+    "host_name": "www.hakunamatatatech.com",
+    "rank": 6,
+    "date": "Feb 23, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://kleapcybersecurity.com",
+    "name": "Business Associate Agreements for HIPAA Compliant AI",
+    "snippet": "Jun 1, 2026 — HIPAA defines a Business Associate as any third party that creates, receives, maintains, or transmits PHI on behalf of a covered entity. Read more",
+    "host_name": "kleapcybersecurity.com",
+    "rank": 7,
+    "date": "Jun 1, 2026",
+    "favicon": ""
+  }
+]

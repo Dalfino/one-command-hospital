@@ -1,0 +1,65 @@
+[
+  {
+    "url": "https://arxiv.org",
+    "name": "Fully Open Meditron: An Auditable Pipeline for Clinical LLMs",
+    "snippet": "May 29, 2026 — We introduce Fully Open Meditron , the first fully open pipeline for building LLM-CDSS, comprising a clinician- audited training corpus , a ... Read more",
+    "host_name": "arxiv.org",
+    "rank": 0,
+    "date": "May 29, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com",
+    "name": "Meditron is a suite of open-source medical Large",
+    "snippet": "Meditron is a suite of open-source medical Large Language Models (LLMs). We release Meditron-7B and Meditron-70B, which are adapted to the medical domain ... Read more",
+    "host_name": "github.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://ai.meta.com",
+    "name": "Meditron: An LLM suite for low-resource medical settings",
+    "snippet": "Apr 25, 2024 — Meditron , a suite of open -source large multimodal foundation models tailored to the medical field, was built on Meta Llama 2.",
+    "host_name": "ai.meta.com",
+    "rank": 2,
+    "date": "Apr 25, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://actu.epfl.ch",
+    "name": "EPFL's new Large Language Model for Medical Knowledge",
+    "snippet": "Nov 28, 2023 — EPFL researchers have just released Meditron , the world's best performing open source Large Language Model tailored to the medical field ... Read more",
+    "host_name": "actu.epfl.ch",
+    "rank": 3,
+    "date": "Nov 28, 2023",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.alphaxiv.org",
+    "name": "Fully Open Meditron: An Auditable Pipeline for Clinical LLMs",
+    "snippet": "We introduce Fully Open Meditron , the first fully open pipeline for building LLM-CDSS, comprising a clinician- audited training corpus , a reproducible data ... Read more",
+    "host_name": "www.alphaxiv.org",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co",
+    "name": "epfl-llm/meditron-70b",
+    "snippet": "Nov 27, 2023 — Meditron is a suite of open-source medical Large Language Models (LLMs). Meditron-70B is a 70 billion parameters model adapted to the medical ... Read more",
+    "host_name": "huggingface.co",
+    "rank": 5,
+    "date": "Nov 27, 2023",
+    "favicon": ""
+  },
+  {
+    "url": "https://medicalxpress.com",
+    "name": "Fully open medical AI framework lets anyone audit how",
+    "snippet": "Jun 17, 2026 — MeditronFO is the first fully open framework for building medical large language models , making AI in health care more transparent and ... Read more",
+    "host_name": "medicalxpress.com",
+    "rank": 6,
+    "date": "Jun 17, 2026",
+    "favicon": ""
+  }
+]

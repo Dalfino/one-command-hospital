@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  @page { size: 794px 1123px; margin: 0; }
+  :root {
+    --page-bg: #f5f6f5;
+    --header-fill: #456454;
+    --border: #b7d3c5;
+    --icon: #3a7d5b;
+    --accent: #298959;
+    --text-primary: #232725;
+    --text-muted: #77817c;
+    --c-bg: #f5f6f5;
+    --c-accent: #298959;
+    --c-text: #232725;
+    --c-muted: #77817c;
+  }
+  html, body { margin: 0; padding: 0; width: 794px; height: 1123px; background: var(--c-bg); }
+  body { font-family: 'Inter', 'Liberation Sans', sans-serif; color: var(--c-text); }
+  @media screen {
+    html { height: auto; display: flex; justify-content: center; min-height: 100vh; background: var(--c-bg); }
+    body { transform-origin: top center; scale: min(1, calc(100vw / 794), calc(100vh / 1123)); margin: 0 auto; box-shadow: 0 0 60px rgba(0,0,0,0.12); }
+  }
+  .cover { width: 794px; height: 1123px; position: relative; border: none; outline: none; box-shadow: none; }
+
+  /* Layer 1: background grid at 2% opacity, clipped */
+  .layer1 { position: absolute; inset: 0; overflow: hidden; z-index: 1; }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(41,137,89,0.05) 0, rgba(41,137,89,0.05) 0.5px, transparent 0.5px, transparent 66px),
+      repeating-linear-gradient(90deg, rgba(41,137,89,0.05) 0, rgba(41,137,89,0.05) 0.5px, transparent 0.5px, transparent 66px);
+  }
+
+  /* Layer 2: structure - ultra-thick left anchor line */
+  .layer2 { position: absolute; inset: 0; z-index: 2; }
+  .anchor-line { position: absolute; left: 95px; top: 112px; bottom: 112px; width: 8px; background: var(--c-accent); }
+
+  /* Layer 3: content (left edge = 95 + 8 + 73 = 176px, 2U gap from thick line) */
+  .layer3 { position: absolute; inset: 0; z-index: 3; }
+  .kicker {
+    position: absolute; left: 176px; top: 168px; max-width: 520px;
+    font-size: 16pt; font-weight: 400; letter-spacing: 3pt; text-transform: uppercase;
+    color: var(--c-text); opacity: 0.6; line-height: 1.5;
+  }
+  .hero {
+    position: absolute; left: 176px; top: 300px; max-width: 540px;
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 54pt; font-weight: 900; line-height: 1.15;
+    color: var(--c-text);
+  }
+  .summary {
+    position: absolute; left: 176px; top: 588px; max-width: 476px;
+    font-size: 16.5pt; font-weight: 400; line-height: 1.6; color: var(--c-text); opacity: 0.85;
+  }
+  .meta {
+    position: absolute; left: 176px; top: 852px;
+    font-size: 17pt; font-weight: 400; line-height: 1.75; color: var(--c-text);
+  }
+  .meta .strong { font-weight: 600; }
+  .meta .sub { color: var(--c-muted); font-size: 15pt; }
+  .footer {
+    position: absolute; left: 176px; top: 1006px;
+    font-size: 16pt; font-weight: 400; letter-spacing: 3pt; text-transform: uppercase;
+    color: var(--c-text); opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="layer1"><div class="grid"></div></div>
+    <div class="layer2"><div class="anchor-line"></div></div>
+    <div class="layer3">
+      <div class="kicker">Hospital-Ready Open Clinical AI Platform &middot; Whitepaper</div>
+      <div class="hero">Willow Health<br>AI Suite</div>
+      <div class="summary">From eight open-source medical AI projects to one governed clinical AI stack &mdash; a productization blueprint covering architecture, compliance, deployment, ROI and a 90-day pilot path.</div>
+      <div class="meta">
+        <div class="strong">Prepared for Clinical Operations &amp; the AI Steering Committee</div>
+        <div class="sub">September 2026 &middot; Version 1.0 &middot; Internal planning document</div>
+      </div>
+      <div class="footer">Willow Health AI &middot; Whitepaper Series</div>
+    </div>
+  </div>
+</body>
+</html>

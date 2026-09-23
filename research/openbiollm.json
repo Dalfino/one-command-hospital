@@ -1,0 +1,47 @@
+[
+  {
+    "url": "https://huggingface.co",
+    "name": "aaditya/Llama3-OpenBioLLM-8B",
+    "snippet": "Benchmark Results . OpenBioLLM - 8B demonstrates superior performance compared to larger models, such as GPT -3.5, Meditron-70B across 9 diverse biomedical ... Read more",
+    "host_name": "huggingface.co",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org",
+    "name": "Biomedical Large Languages Models Seem not to be",
+    "snippet": "Aug 25, 2024 — While larger models showed similar performance on case tasks (e.g., OpenBioLLM -70B: 66.4% vs. Llama-3 -70B-Instruct: 65% on JAMA cases), smaller ... Read more",
+    "host_name": "arxiv.org",
+    "rank": 1,
+    "date": "Aug 25, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.saama.com",
+    "name": "Saama's Medical-Domain LLMs Release",
+    "snippet": "The models were able to outperform (using nine different benchmarks for measurement) industry giants such as: Openai's GPT - 4 , Google's Gemini, Google's Med-PaLM ... Read more",
+    "host_name": "www.saama.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.aimodels.fyi",
+    "name": "Llama3-OpenBioLLM-8B: Text-to-Text model",
+    "snippet": "Apr 14, 2026 — While the 8B model achieves 72.5% average accuracy across nine biomedical benchmarks , it falls behind its larger 70B variant (86.1% average) ...",
+    "host_name": "www.aimodels.fyi",
+    "rank": 3,
+    "date": "Apr 14, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://aimultiple.com",
+    "name": "Compare 9 Large Language Models in Healthcare - LLM",
+    "snippet": "Sep 4, 2026 — Benchmark methodology: This benchmark evaluates the supervised fine-tuning performance of healthcare LLMs vs. large general-purpose models ( GPT - ... Read more",
+    "host_name": "aimultiple.com",
+    "rank": 4,
+    "date": "Sep 4, 2026",
+    "favicon": ""
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://www.preprints.org",
+    "name": "Mitigating LLM Hallucinations: A Comprehensive Review",
+    "snippet": "May 26, 2025 — This paper presents a systematic review of current guardrail technologies designed to mitigate hallucinations in LLMs, analyzing their ... Read more",
+    "host_name": "www.preprints.org",
+    "rank": 0,
+    "date": "May 26, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://pmc.ncbi.nlm.nih.gov",
+    "name": "MEGA-RAG: a retrieval-augmented generation framework with",
+    "snippet": "by S Xu · 2025 · Cited by 74 — We propose a retrieval -augmented generation framework … specifically designed to mitigate hallucinations in public health applications. ...",
+    "host_name": "pmc.ncbi.nlm.nih.gov",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org",
+    "name": "Context-Aware Multi-Agent Guardrails for Clinical Safety &",
+    "snippet": "by E Nasarian · 2026 · Cited by 1 — Integrating large language models (LLMs) into patient -facing healthcare systems offers significant potential to improve access to medical information. Read more",
+    "host_name": "arxiv.org",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://pub.towardsai.net",
+    "name": "Hallucinations in Healthcare LLMs: Why They Happen and",
+    "snippet": "May 13, 2025 — Hallucinations in medical LLMs aren't just bugs — they're safety risks . This series walks through how to ground healthcare language models in ... Read more",
+    "host_name": "pub.towardsai.net",
+    "rank": 3,
+    "date": "May 13, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nature.com",
+    "name": "The need for guardrails with large language models in",
+    "snippet": "by JB Hakim · 2025 · Cited by 37 — Preventing and mitigating hallucinations involves the implementation of “ guardrails ” around LLMs to shape and restrict their output. While the ... Read more",
+    "host_name": "www.nature.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.tactionsoft.com",
+    "name": "How to Stop LLM Hallucinations in Clinical AI Contexts",
+    "snippet": "May 8, 2026 — How to stop LLM hallucinations in clinical AI: RAG with citation grounding , structured output, validation guardrails , and clinical - safety review",
+    "host_name": "www.tactionsoft.com",
+    "rank": 5,
+    "date": "May 8, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://kili-technology.com",
+    "name": "Understanding LLM Hallucinations and how to mitigate them",
+    "snippet": "Mitigation strategies for LLM hallucinations include fine-tuning models on verified datasets , implementing rule-based checks for generated outputs, using ... Read more",
+    "host_name": "kili-technology.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com",
+    "name": "Kanisha-Shah/Hallucination-Mitigation-Using-RAG: A",
+    "snippet": "A Columbia University capstone project focused on mitigating hallucinations in Medical Question Answering systems using Retrieval-Augmented Generation (RAG) ...",
+    "host_name": "github.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

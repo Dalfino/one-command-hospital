@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://github.com",
+    "name": "medspacy/medspacy: Library for clinical NLP with spaCy.",
+    "snippet": "MedSpaCy is a library of tools for performing clinical NLP and text processing tasks. ConText algorithm for detecting semantic modifiers ntities, including  ...",
+    "host_name": "github.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://pmc.ncbi.nlm.nih.gov",
+    "name": "Launching into clinical space with medspaCy - PMC",
+    "snippet": "by H Eyre · 2022 · Cited by 184 — In this paper, we introduce medspaCy , an extensible, open-source cNLP library based on spaCy framework that allows flexible integration of rule-based and ... Read more",
+    "host_name": "pmc.ncbi.nlm.nih.gov",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://spacy.io",
+    "name": "medspaCy · spaCy Universe",
+    "snippet": "A toolkit for clinical NLP with spaCy. Features include sentence splitting, section detection , and asserting negation , family history, and uncertainty. Read more",
+    "host_name": "spacy.io",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.researchgate.net",
+    "name": "a new clinical text processing toolkit in Python | Request PDF",
+    "snippet": "In this paper, we introduce medspaCy , an extensible, open-source cNLP library based on spaCy framework that allows flexible integration of rule-based and ... Read more",
+    "host_name": "www.researchgate.net",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://colab.research.google.com/drive/13Vd-CSkN4FctzFq7k4fgLcSpol15D3ij",
+    "name": "04-NLP-with-medspaCy.ipynb",
+    "snippet": "The goal of medSpaCy is to provide flexible, easy-to-use spaCy components for common clinical NLP tasks, such as: Concept extraction; Negation detection ... Read more",
+    "host_name": "colab.research.google.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://nuchange.ca",
+    "name": "NLP for Clinical Notes - Tools and Techniques",
+    "snippet": "Apr 21, 2020 — SpaCy is an open-source python library for NLP . It features NER, POS tagging, dependency parsing, word vectors and is widely used.",
+    "host_name": "nuchange.ca",
+    "rank": 5,
+    "date": "Apr 21, 2020",
+    "favicon": ""
+  },
+  {
+    "url": "https://skills.rest",
+    "name": "Clinical NLP pipeline with MedSpaCy and scispaCy",
+    "snippet": "This skill provides a scalable NLP pipeline to identify clinical entities, detect negation , segment sections , and map concepts to standardized vocabularies",
+    "host_name": "skills.rest",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.andrewvillazon.com",
+    "name": "Clinical Natural Language Processing in Python",
+    "snippet": "Apr 30, 2021 — The final aspect to consider in Clinical NLP is negation - the contradiction or denial of something. In a clinical context , the documented ... Read more",
+    "host_name": "www.andrewvillazon.com",
+    "rank": 7,
+    "date": "Apr 30, 2021",
+    "favicon": ""
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://arxiv.org",
+    "name": "BioMistral: A Collection of Open-Source Pretrained Large",
+    "snippet": "Feb 15, 2024 — We conduct a comprehensive evaluation of BioMistral on a benchmark comprising 10 established medical question-answering (QA) tasks in English. Read more",
+    "host_name": "arxiv.org",
+    "rank": 0,
+    "date": "Feb 15, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co",
+    "name": "BioMistral/BioMistral-7B",
+    "snippet": "Feb 15, 2024 — In this paper, we introduce BioMistral, an open-source LLM tailored for the biomedical domain, utilizing Mistral as its foundation model and ... Read more",
+    "host_name": "huggingface.co",
+    "rank": 1,
+    "date": "Feb 15, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://liner.com",
+    "name": "BioMistral: A Collection of Open-Source Pretrained Large",
+    "snippet": "Feb 15, 2024 — BioMistral 7B , an open-source LLM for the biomedical domain, benchmark of 10 medical question-answering tasks",
+    "host_name": "liner.com",
+    "rank": 2,
+    "date": "Feb 15, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://pmc.ncbi.nlm.nih.gov",
+    "name": "BioMistral-NLU: Towards More Generalizable Medical  - PMC",
+    "snippet": "by YV Fu · 2025 · Cited by 11 — Our proposed system, BioMistral -NLU's zero-shot performance on 15 unseen medical NLU datasets from 2 benchmarks : BLURB (labeled by †) and BLUE (labeled by ∗). Read more",
+    "host_name": "pmc.ncbi.nlm.nih.gov",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.researchgate.net",
+    "name": "BioMistral: A Collection of Open-Source Pretrained Large",
+    "snippet": "May 3, 2026 — BioMistral-7B (Labrak et al. 2024) continues pretraining of Mistral-7B-Instruct-v0.1 on PubMed Central articles, achieving competitive results ... Read more",
+    "host_name": "www.researchgate.net",
+    "rank": 4,
+    "date": "May 3, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://dev.co",
+    "name": "BioMistral-7B: Open-Source Medical LLM for Research &",
+    "snippet": "Feb 21, 2024 — BioMistral-7B is a 7B-parameter Apache-2.0 licensed LLM for biomedical and medical QA tasks. medical QA benchmarks. Scores ~51.5% avg on same ...",
+    "host_name": "dev.co",
+    "rank": 5,
+    "date": "Feb 21, 2024",
+    "favicon": ""
+  }
+]
