@@ -18,3 +18,11 @@ corpus:
     expires: "2028-01-15"
     status: active
     synthetic: true
+  - id: GLYCEMIC-CTRL
+    file: corpus/inpatient-glycemic-control-v1.md
+    title: "Inpatient Glycemic Control Protocol"
+    edition: "v1.0"
+    effective: "2026-05-01"
+    expires: "2028-05-01"
+    status: active
+    synthetic: true

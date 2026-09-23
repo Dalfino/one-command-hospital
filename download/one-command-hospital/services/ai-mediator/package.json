@@ -5,5 +5,8 @@
   "type": "module",
   "main": "main.js",
   "scripts": { "start": "node main.js" },
-  "dependencies": { "express": "^4.19.0" }
+  "dependencies": {
+    "express": "^4.19.0",
+    "jsonwebtoken": "^9.0.2"
+  }
 }

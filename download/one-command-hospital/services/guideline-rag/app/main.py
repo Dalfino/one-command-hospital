@@ -1,6 +1,7 @@
-"""Guideline RAG — the librarian robot.
+"""Guideline RAG — the librarian robot (v0.2).
 
-Improvement #1 (citation-forced RAG + hard refusal) and #2 (edition stamping).
+Improvement #1 (citation-forced RAG + hard refusal) and #2 (edition stamping),
+Phase 1: hybrid retrieval (BM25 + optional SBERT) and title-boosted chunks.
 
 Rules the generator lives by:
   - Answer ONLY from the provided excerpts.
@@ -20,39 +21,49 @@ import yaml
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from .retrieval import HybridRetriever
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 GUIDELINES = ROOT / "guidelines"
 THRESHOLD = float(os.environ.get("RETRIEVAL_THRESHOLD", "0.18"))
 LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "http://llm:8000/v1")
 LLM_MODEL = os.environ.get("LLM_MODEL", "BioMistral/BioMistral-7B")
 
-app = FastAPI(title="guideline-rag", version="0.1.0")
-WORD = re.compile(r"[a-z0-9]+")
+app = FastAPI(title="guideline-rag", version="0.2.0")
 
-# corpus_id → {manifest fields}, and the flat section index
 manifest: dict = {}
-sections: list = []
+retriever: HybridRetriever | None = None
 
 
-@app.on_event("startup")
-def load_corpus():
-    global sections, manifest
+def _load_corpus():
     entries = yaml.safe_load((GUIDELINES / "manifest.yaml").read_text())["corpus"]
-    manifest = {e["id"]: e for e in entries}
-    sections = []
+    man, sections = {}, []
     for e in entries:
+        man[e["id"]] = e
         text = (GUIDELINES / e["file"]).read_text()
         parts = re.split(r"^(##\s+\d+\..+)$", text, flags=re.M)
         for i in range(1, len(parts), 2):
-            num = re.match(r"##\s+(\d+)\.", parts[i]).group(1)
+            header = parts[i].strip()
+            m = re.match(r"##\s+(\d+)\.\s*(.+)", header)
+            num, title = m.group(1), m.group(2)
+            body = parts[i + 1] if i + 1 < len(parts) else ""
+            # Title boost: corpus title + section header travel with the chunk,
+            # so doc-level vocabulary helps retrieval, not just section text.
+            chunk = f"[{e['title']} — §{num} {title}] (edition {e['edition']})\n{header}\n{body}"
             sections.append({
                 "corpus_id": e["id"],
                 "section": num,
                 "edition": e["edition"],
-                "text": parts[i].strip() + "\n" + (parts[i + 1] if i + 1 < len(parts) else ""),
+                "text": chunk,
             })
-    from rank_bm25 import BM25Okapi
-    app.state.bm25 = BM25Okapi([WORD.findall(s["text"].lower()) for s in sections])
+    return man, sections
+
+
+@app.on_event("startup")
+def startup():
+    global manifest, retriever
+    manifest, sections = _load_corpus()
+    retriever = HybridRetriever(sections)
 
 
 class Question(BaseModel):
@@ -73,6 +84,7 @@ class Answer(BaseModel):
     refusal_reason: Optional[str] = None
     latency_ms: int
     model: str
+    retrieval: Optional[dict] = None
 
 
 def build_prompt(question: str, hits: list) -> str:
@@ -102,14 +114,22 @@ def call_llm(prompt: str) -> str:
 @app.post("/answer", response_model=Answer)
 def answer(q: Question):
     t0 = time.time()
-    scores = app.state.bm25.get_scores(WORD.findall(q.question.lower()))
-    top_idx = sorted(range(len(scores)), key=lambda i: -scores[i])[:3]
-    hits = [sections[i] for i in top_idx if scores[i] >= THRESHOLD]
+    SECTIONS = retriever.sections
+    results = retriever.search(q.question, k=3)
+    hits = [{**SECTIONS[r["index"]], "score": r["score"]}
+            for r in results if r["score"] >= THRESHOLD]
+
+    retrieval_meta = {"engine": retriever.engine,
+                      "top": [{"corpus_id": SECTIONS[r["index"]]["corpus_id"],
+                               "section": SECTIONS[r["index"]]["section"],
+                               "score": round(r["score"], 3)}
+                              for r in results]}
 
     if not hits:
         return Answer(answer="NOT_COVERED", citations=[], refusal=True,
                       refusal_reason="no guideline section met retrieval confidence",
-                      latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL)
+                      latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL,
+                      retrieval=retrieval_meta)
 
     prompt = build_prompt(q.question, hits)
     try:
@@ -121,7 +141,8 @@ def answer(q: Question):
     if "NOT_COVERED" in raw.upper():
         return Answer(answer="NOT_COVERED", citations=[], refusal=True,
                       refusal_reason="generator judged the corpus does not cover this",
-                      latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL)
+                      latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL,
+                      retrieval=retrieval_meta)
 
     # Improvement #2: stamp every citation with the manifest edition + title.
     cites, seen = [], set()
@@ -134,10 +155,13 @@ def answer(q: Question):
         cites.append(Citation(corpus_id=cid, section=sec, edition=e["edition"], title=e["title"]))
 
     return Answer(answer=raw, citations=cites, refusal=False,
-                  latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL)
+                  latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL,
+                  retrieval=retrieval_meta)
 
 
 @app.get("/health")
 def health():
-    return {"ok": bool(sections), "sections": len(sections),
+    return {"ok": bool(retriever and retriever.sections),
+            "sections": len(retriever.sections) if retriever else 0,
+            "retrieval_engine": retriever.engine if retriever else "unloaded",
             "corpus": {k: v["edition"] for k, v in manifest.items()}}

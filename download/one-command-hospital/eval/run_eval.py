@@ -37,17 +37,20 @@ def load_corpus():
     sections = []
     for entry in manifest:
         text = (GUIDELINES / entry["file"]).read_text()
-        header = text.split("## ")[0]
         # split into numbered sections on "## N. Title"
         parts = re.split(r"^(##\s+\d+\..+)$", text, flags=re.M)
         for i in range(1, len(parts), 2):
             block = parts[i].strip()
             body = parts[i + 1] if i + 1 < len(parts) else ""
-            num = re.match(r"##\s+(\d+)\.", block).group(1)
+            m = re.match(r"##\s+(\d+)\.\s*(.+)", block)
+            num, sec_title = m.group(1), m.group(2)
+            # Title-boost, synced with services/guideline-rag/app/main.py
+            chunk = (f"[{entry['title']} — §{num} {sec_title}] "
+                     f"(edition {entry['edition']})\n{block}\n{body}")
             sections.append({
                 "corpus_id": entry["id"],
                 "section": num,
-                "text": block + "\n" + body,
+                "text": chunk,
             })
     return sections
 

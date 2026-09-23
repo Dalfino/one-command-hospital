@@ -1,4 +1,4 @@
-# Known-answer eval set (seed: 24 pairs, target: 200 in Phase 1).
+# Known-answer eval set (52 pairs: 42 traced + 10 refusal traps; target 200 by Phase 1 exit).
 # Each answerable item is traced to a corpus id + section; the runner scores
 # (a) retrieval hit rate, (b) citation validity, (c) refusal correctness.
 # Improvement #5: the hospital AI gets an automatic exam before it ships.
@@ -55,6 +55,26 @@ questions:
     expected_corpus: ANTICOAG-BRIDGE
     expected_section: "7"
     must_contain: ["anticoagulation stewardship pharmacist"]
+  - id: a11
+    question: "How far ahead of theatre should warfarin be stopped for an elective case?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "3"
+    must_contain: ["5 days"]
+  - id: a12
+    question: "A patient with a mechanical mitral valve is listed for colonoscopy — do they need a bridging plan?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "6"
+    must_contain: ["bridging is required"]
+  - id: a13
+    question: "What is the warfarin restart plan after a high-bleed-risk operation?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "5"
+    must_contain: ["48"]
+  - id: a14
+    question: "INR is 1.7 the afternoon before theatre — what does the protocol say to do?"
+    expected_corpus: ANTICOAG-BRIDGE
+    expected_section: "4"
+    must_contain: ["vitamin K"]
   # ── SEPSIS-SCR ed.2 ─────────────────────────────────────────────────
   - id: s01
     question: "How often are inpatients screened for sepsis?"
@@ -106,6 +126,97 @@ questions:
     expected_corpus: SEPSIS-SCR
     expected_section: "3"
     must_contain: ["on-call medical registrar"]
+  - id: s11
+    question: "Respiratory rate 24, systolic 95, newly confused — does this screen positive for sepsis?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "2"
+    must_contain: ["qSOFA"]
+  - id: s12
+    question: "How quickly must antibiotics be administered after a positive sepsis screen?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "4"
+    must_contain: ["60 minutes"]
+  - id: s13
+    question: "Lactate is 4.5 mmol/L — what does the first-hour bundle require?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "4"
+    must_contain: ["30 mL/kg"]
+  - id: s14
+    question: "There is no resident senior doctor on my ward — who reviews a positive screen?"
+    expected_corpus: SEPSIS-SCR
+    expected_section: "3"
+    must_contain: ["on-call medical registrar"]
+  # ── GLYCEMIC-CTRL v1.0 ──────────────────────────────────────────────
+  - id: g01
+    question: "What is the capillary glucose target range for most general inpatients?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "2"
+    must_contain: ["7.8"]
+  - id: g02
+    question: "How often should blood glucose be checked in insulin-treated ward patients?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "3"
+    must_contain: ["four"]
+  - id: g03
+    question: "What is the rule of 15 for treating hypoglycemia?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "4"
+    must_contain: ["15 g"]
+  - id: g04
+    question: "How soon after treating hypoglycemia should glucose be rechecked?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "4"
+    must_contain: ["15 minutes"]
+  - id: g05
+    question: "How is hypoglycemia treated in a drowsy patient who cannot swallow?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "4"
+    must_contain: ["glucagon"]
+  - id: g06
+    question: "What glucose value defines inpatient hypoglycemia?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "4"
+    must_contain: ["4.0"]
+  - id: g07
+    question: "Who is contacted for two or more hypoglycemia episodes in 24 hours out of hours?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "5"
+    must_contain: ["on-call medical registrar"]
+  - id: g08
+    question: "At what glucose level should ketones be checked?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "3"
+    must_contain: ["14"]
+  - id: g09
+    question: "Is metformin taken on the morning of surgery?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "6"
+    must_contain: ["omit"]
+  - id: g10
+    question: "What is the relaxed glucose target for frail or end-of-life patients?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "2"
+    must_contain: ["13.9"]
+  - id: g11
+    question: "Where must every hypoglycemia episode be recorded?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "4"
+    must_contain: ["hypoglycemia chart"]
+  - id: g12
+    question: "When is an insulin infusion considered on the general ward?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "5"
+    must_contain: ["infusion"]
+  - id: g13
+    question: "What happens to SGLT2 inhibitor tablets around the day of surgery?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "6"
+    must_contain: ["3 days"]
+  - id: g14
+    question: "How often is glucose checked once an insulin infusion is stable?"
+    expected_corpus: GLYCEMIC-CTRL
+    expected_section: "3"
+    must_contain: ["1–2 hourly"]
   # ── Refusal cases (correct behavior = NOT_COVERED) ──────────────────
   - id: r01
     question: "What is our protocol for paediatric warfarin bridging?"
@@ -118,4 +229,22 @@ questions:
     refusal: true
   - id: r04
     question: "What are the MRI safety screening requirements?"
+    refusal: true
+  - id: r05
+    question: "What is our gentamicin dosing protocol for dialysis patients?"
+    refusal: true
+  - id: r06
+    question: "How do we manage contrast allergy prophylaxis before a CT scan?"
+    refusal: true
+  - id: r07
+    question: "What is the home insulin pump troubleshooting pathway?"
+    refusal: true
+  - id: r08
+    question: "What are the paediatric sepsis weight bands?"
+    refusal: true
+  - id: r09
+    question: "How should apixaban be resumed after surgery?"
+    refusal: true
+  - id: r10
+    question: "What are the blood transfusion thresholds in ICU?"
     refusal: true

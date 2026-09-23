@@ -3,9 +3,10 @@
 A clinician asks a protocol question **inside the EHR** and gets a cited answer from the
 hospital's own guidelines — or an honest refusal. Zero PHI reaches the AI. One GPU. One command.
 
-> **Status: v0 scaffold.** Stack composition, service contracts, seed corpus and eval harness
-> are real and runnable-adjacent; service logic is a working skeleton meant to be hardened in
-> Phase 1. See "Honest limitations" below.
+> **Status: Phase 1 — core items landed.** SMART widget (build green), Medplum Bot JWT
+> auth, ConText verifier, hybrid retrieval (BM25 + optional SBERT), 3-protocol corpus,
+> 52-question eval at **98% retrieval**. Compose stack, service contracts and eval harness
+> are real; Docker images are built at first `make up`.
 
 ## The 60-second version
 
@@ -72,13 +73,14 @@ make eval                   # run retrieval + grounding eval → eval/report.md
 
 ```
 guidelines/        seed knowledge base (SYNTHETIC protocols + manifest w/ editions)
-eval/              known-answer QA seed + runner (retrieval & grounding metrics)
+eval/              known-answer QA (52 pairs) + runner (retrieval & grounding metrics)
 services/
   deid-gate/       FastAPI + Presidio PHI scrubber          :8100
-  guideline-rag/   retrieval + generation + citation forcing :8101
-  verifier/        grounding/negation checks                :8102
-  ai-mediator/     OpenHIM mediator, FHIR writeback         :8103
-smart-app/         SMART on FHIR widget (stub, Phase 1)
+  guideline-rag/   hybrid retrieval + citation-forced RAG    :8101
+  verifier/        medspaCy ConText grounding checks         :8102
+  ai-mediator/     OpenHIM mediator, JWT auth, /signoff      :8103
+smart-app/         SMART on FHIR widget (Vite+React, build green)
+portal/            program website (Next.js 16) — the stakeholder story
 tools/synthea/     synthetic patient generator image
 docs/              architecture.md, improvements.md
 ```
@@ -92,20 +94,33 @@ docs/              architecture.md, improvements.md
 5. Staleness alarms: answers refuse (or warn) when a guideline edition is expired.
 6. Kill criteria defined in `docs/architecture.md` — the failure story is designed.
 
-## Honest limitations (v0)
+## Honest limitations (Phase 1 in progress)
 
-- Service logic is a hardened skeleton: heuristics in `verifier`, BM25 retrieval
-  (vector index planned), naive FHIR auth in mediator (JWT Bot auth planned).
-- SMART widget is a stub. Eval set is seeded (~24 pairs), target is 200.
+- Remaining Phase 1 wiring: SMART iframe launch registration in OpenEMR, OpenHIM
+  mediator registration, vector backend on by default (currently BM25 unless
+  `WITH_SBERT` build arg), eval set 52 → 200.
 - `openhim-console` may need its core-API endpoint tweaked after first boot (noted in compose).
 - Seed protocols are **synthetic**, authored for testing — never medical advice.
 
 ## Roadmap
 
-1. **Phase 0 (this repo):** stack up, eval harness green, synthetic hospital populated.
-2. **Phase 1:** SMART widget in OpenEMR, Medplum Bot auth, vector retrieval, 200-question eval.
+1. **Phase 0 (done):** stack up, eval harness green, synthetic hospital populated.
+2. **Phase 1 (in progress):** SMART widget ✅ · Bot JWT auth ✅ · ConText verifier ✅ ·
+   hybrid retrieval ✅ · eval 52 → 200 · vector index on by default · OpenHIM registration.
 3. **Phase 2:** Orthanc + OHIF imaging layer, MedGemma pre-read (Recipe B).
 4. **Phase 3:** MIMIC-code validation pathway, federated testbed, device layer.
+
+## Milestones
+
+| M | Commit | What landed |
+|---|---|---|
+| M0 | `b8aea4d` | v0 scaffold — compose stack, corpus, eval (18/20), 4 services |
+| M1 | `0a109b8` | SMART on FHIR widget — vite build green, ask/sign/escalate loop |
+| M2 | `11bbaa2` | Medplum Bot JWT auth + `/signoff` audit-loop endpoint |
+| M3 | `ce51fea` | Verifier v0.2 — medspaCy ConText polarity checks |
+| M4 | `406d6d8` | Hybrid retrieval (BM25 + optional SBERT), title-boosted chunks |
+| M5 | `2c05ca2` | 3 protocols, 52-question eval, **98% retrieval** (CI gate 80%) |
+| M6 | portal | Program website (Next.js) with the full flagship story |
 
 ## Licensing note
 

@@ -1,5 +1,5 @@
 fastapi>=0.111
 uvicorn>=0.30
-# Phase 1 upgrade path (improvement #3 full form):
-#   medspacy>=1.3   (ConText negation/temporality)
-#   scispacy + en_ner_bc5cdr_md (UMLS-adjacent entity overlap)
+medspacy>=1.3
+# medspacy pulls spaCy + ConText rules. If the build must stay lean,
+# remove this line — the service falls back to heuristic-v0 automatically.

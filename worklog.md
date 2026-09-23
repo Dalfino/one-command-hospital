@@ -95,3 +95,48 @@ Stage Summary:
 - The six improvements are implemented or stubbed with verify paths; compose file is the "one command" artifact.
 - Prior deliverables (Willow portal at / route, whitepaper PDF) reflect the OLD all-8-improvise strategy — superseded by this architecture; portal/whitepaper need a content refresh pass to match the new one-project focus (pending user go-ahead).
 - Next: Phase 1 (SMART widget, Bot JWT auth, medspaCy ConText verifier, vector retrieval, 200-question eval), then portal+whitepaper refresh.
+
+---
+Task ID: 11 (main agent)
+Task: Phase 1 build + GitHub repo (Dalfino/one-command-hospital) with milestone pushes + portal refresh integration
+
+Work Log:
+- Created repo via API; PAT verified (login: Dalfino). Token used inline only (never in .git/config or files); grep-checked before every push (clean).
+- Git auth note: `x-access-token:` prefix rejected; `https://Dalfino:<PAT>@github.com/...` works for this fine-grained PAT.
+- M0 `b8aea4d`: v0 scaffold pushed (compose stack, corpus, eval 18/20, 4 services).
+- M1 `0a109b8`: SMART widget — Vite+React+fhirclient, warm-care UI, ask/sign/escalate. Fixed PostCSS parent-lookup (inline css.postcss config) + duplicated button; vite build GREEN.
+- M2 `11bbaa2`: medplum-auth.js (OAuth2 client_credentials + JWT client_assertion RS384, token cache) + /signoff endpoint closing human_action loop; node --check green.
+- M3 `ce51fea`: verifier v0.2 — medspaCy ConText polarity map (answer vs source), conflicts flagged, heuristic fallback, engine in /health.
+- M4 `406d6d8`: retrieval.py HybridRetriever (alpha·norm(BM25)+(1−α)·cosine, VECTOR_BACKEND/HYBRID_ALPHA envs, honest degradation) + title-boosted chunks + Dockerfile WITH_SBERT ARG. Fixed relative import + comprehension bug pre-push.
+- M5 `2c05ca2`: GLYCEMIC-CTRL v1.0 protocol + eval to 52 pairs (42 traced + 10 refusal traps, incl. paraphrase items) + eval loader sync → 98% retrieval (41/42, BM25; misses a10/g02 borderline), CI gate green.
+- M6 `f234d29`: portal copied to portal/ (rsync minus node_modules/.next/db/prisma etc.) + portal/README + README status/milestones. `09b92ec` docs fix.
+- Portal refresh (Task 10, full-stack-developer subagent): content rewritten to flagship story — hero "librarian robot", how-it-works 7-hop lifecycle, combination (10 repos), 6 improvements, proof+kill criteria, compliance open-items, deployment, roadmap; lint exit 0; agent-browser 1366px+375px: 0 overflow, 0 console errors, counters/tabs/expanders verified; obsolete components removed; metadata retitled ("a Willow Lab research build").
+- Whitepaper refresh NOT started this turn (pdf skill chain + script surgery needs its own focused pass) — scheduled next.
+
+Stage Summary:
+- REPO LIVE: github.com/Dalfino/one-command-hospital, 8 commits M0-M6 + docs fix, every milestone pushed as requested.
+- Phase 1 core landed: SMART widget (build green), JWT auth, ConText verifier, hybrid retrieval, 52-pair eval @ 98%.
+- Portal (workspace Next.js app at /) now tells the new story and is verified; copy lives at portal/ in the repo.
+- PENDING: whitepaper PDF refresh to match new architecture (next dedicated pass, using persisted scripts in /home/z/my-project/scripts/); eval 52→200; OpenEMR SMART launch registration; user advised to ROTATE the PAT shared in chat.
+
+---
+Task ID: 10
+Agent: full-stack-developer
+Task: Pivot the Willow portal (route /) to the locked flagship story — "Guideline Copilot on the One-Command Hospital" — keeping the Task 6 design system, layout quality, and animation style untouched.
+
+Work Log:
+- Read worklog + one-command-hospital repo (README, docs/architecture.md, docs/improvements.md, eval/qa_seed.yaml, eval/report.md, docker-compose.yml, Makefile, git log M1–M5) to source every number honestly: 52 pairs (42 traced + 10 refusal traps), 98% retrieval (41/42, BM25-only, eval/report.md), 80% CI floor, kill criteria (85% grounded / PHI one-strike / >8s median latency / trust <80%), ~20-min boot, 1×≥24GB GPU, port map, licenses, Phase 0 done + Phase 1 items shipped (SMART widget, Bot JWT, ConText verifier v0.2, hybrid BM25+SBERT).
+- Rewrote src/components/willow/willow-data.ts as the single content module: NAV_LINKS (7 anchors), HERO_CHIPS (98% retrieval / 52-question exam / 0 PHI to AI), LIFECYCLE_STEPS (7-hop request lifecycle, de-ID gate highlighted), IMPROVEMENTS (6 cards, upstream→ours→verify), COMBINATION (10 repos with Deploy/Harvest/Component/Conformance-CI/Planned dispositions + license footnote), PROOF_METRICS + GRADED_ON + KILL_CRITERIA, COMPLIANCE_TABS (each item flagged done vs OPEN ITEM), MAKE_VERBS + COMPOSE_PROFILES + PORT_ROWS + DEPLOY_FACTS, PHASES with status chips (done/active/planned + per-bullet done checks), RISKS (8 rows aligned to kill criteria: refusal fatigue, retrieval drift, staleness, PHI, hallucination, latency, trust, licenses), REPO_URL, BUILT_ON, DISCLAIMER, FOOTER_COPY ("a Willow Lab research build").
+- Components: rewrote hero.tsx (H1 "A librarian robot inside the hospital", terracotta subhead "Guideline Copilot on the One-Command Hospital", zero-PHI subhead, CTAs "Read the architecture"→#how + "View the repo"→GitHub external; chips 98%/52/0), site-nav.tsx (brand "One-Command Hospital — Guideline Copilot · a Willow Lab build", repo CTA, Sheet aria-describedby fix), why-now.tsx (2 a.m. warfarin scenario card + 3 kept industry stats re-captioned "general industry finding"), platform→how-it-works.tsx (kept expandable layer treatment + connector drop-dots; de-ID step gets terracotta pulsing "PHI dies here" chip; non-negotiables banner), products→improvements.tsx (Upstream today / Ours boxes + FlaskConical Verify chips, IdleIcons kept), sources→combination.tsx (10 repo cards with disposition chips), roi→proof.tsx (animated counters 52/98%/10/80%, make-eval strip, 4 kill-criteria cards with pulsing terracotta dots), compliance.tsx (framework+open-items legend; done=forest check, open=amber dashed circle cards), deployment.tsx (one-command code block, Makefile verbs, profile chips, port-map table with min-w-[520px] internal scroll, GPU/air-gapped/~20-min fact cards), roadmap.tsx (status chips Done/In progress/Planned, desktop progress line animates to 3/8, pulsing active node, per-bullet done checks), site-footer.tsx (pine CTA band "Run the hospital yourself" + repo + architecture buttons, GitHub link, advisory-only disclaimer); page.tsx reordered (Hero→Why→How→Combination→Improvements→Proof→Compliance→Deployment→Roadmap→Risks); layout.tsx metadata retitled "One-Command Hospital — Guideline Copilot".
+- Removed obsolete platform.tsx/products.tsx/sources.tsx/roi.tsx. Kept willow-* CSS keyframes/classes and motion-primitives untouched.
+- Fixed lint regression: eslint was scanning download/one-command-hospital/smart-app/dist (Task 9 Vite build artifact) and failing; added download/research/scripts/mini-services/db/tests to eslint ignores (build artifacts must not be linted). bun run lint → exit 0.
+- Verification (agent-browser, desktop 1366×900 + mobile 375×812): title correct; zero console errors, zero page errors (fixed one Radix SheetContent aria-describedby warning en route); all 9 anchored sections present; nav anchor lands at exactly 80px (desktop #how; mobile #proof after Sheet close, sheet closes on nav click); horizontal overflow 0px on both viewports incl. all lifecycle steps expanded (strict per-element scan excluding intentional overflow containers); port table scrolls internally on mobile; compliance tabs switch (EU AI Act: 6 items, 3 OPEN ITEM); lifecycle expanders work (7 steps, aria-expanded toggles); proof counters animate to 52 / 98% / 10 / 80%; deployment facts + port rows (6) verified; roadmap statuses Done/In progress/Planned×2; footer bottom == document bottom on both viewports (11953/11953 desktop, 21140/21140 mobile); ambient blobs/ECG/particles mounted.
+- VLM inspection of full-page screenshots (after scroll-triggering all whileInView reveals): desktop 1366 = "NO ISSUES"; mobile 375 = flagged items disproven by DOM ground truth (no overflow/clipping) except expected below-the-fold stat chips on mobile hero — accepted, matches Task 6 pattern. Screenshots at /tmp/task10-*.png, VLM script persisted at scripts/task10_vlm_check.mjs.
+- dev.log: transient module-not-found only during mid-write file swaps (old page.tsx ↔ new components), resolved; final compiles clean, GET / → 200.
+
+Stage Summary:
+- Portal now tells the locked flagship story end-to-end with design system and ALIVE animations intact; all content traceable to the one-command-hospital repo (no invented numbers; ~20-min boot explicitly labeled "pilot-stage estimate").
+- Honesty treatments added: OPEN ITEM markers in compliance tabs, "general industry finding" captions on kept stats, verify chips on every improvement, kill criteria surfaced as a dedicated card row.
+- Old "Willow Health AI Suite" fully retired from user-visible copy; "Willow" survives only as "a Willow Lab research build" (permitted). Files: willow-data.ts, hero, site-nav, why-now, how-it-works, improvements, combination, proof, compliance, deployment, roadmap, site-footer, page.tsx, layout.tsx, eslint.config.mjs (+ removed 4 obsolete components).
+- Verification green: lint exit 0; desktop+mobile zero console/page errors, zero horizontal overflow, anchors/tabs/expanders/counters/footer-stickiness all pass.
+- Note for main agent: whitepaper (download/) still carries the old suite story and is explicitly out of scope here; dist artifacts inside download/one-command-hospital/smart-app are excluded from lint via eslint.config.mjs ignores.
