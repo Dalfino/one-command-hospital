@@ -36,6 +36,10 @@ const MEDPLUM_FHIR_URL = process.env.MEDPLUM_FHIR_URL || "http://medplum:8080/fh
 // ── rate limiting: per-IP token bucket (RATE_LIMIT_RPS / RATE_LIMIT_BURST) ──
 const RATE_RPS = parseFloat(process.env.RATE_LIMIT_RPS || "10");
 const RATE_BURST = parseFloat(process.env.RATE_LIMIT_BURST || "20");
+// A HUNG upstream is worse than a dead one: without a deadline, a stalled
+// verifier/deid/RAG hangs the clinician's request forever. Fail closed within
+// UPSTREAM_TIMEOUT_MS instead (regression-tested by the fail-closed tier).
+const UPSTREAM_TIMEOUT_MS = parseInt(process.env.UPSTREAM_TIMEOUT_MS || "10000", 10);
 const buckets = new Map();
 
 function rateLimit(req, res, next) {
@@ -90,6 +94,7 @@ async function postJson(url, body, requestId = null) {
       ...(requestId ? { "X-Request-ID": requestId } : {}),
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   });
   if (!r.ok) throw new Error(`${url} → ${r.status}`);
   return r.json();
@@ -153,7 +158,7 @@ app.post("/process", async (req, res) => {
           sources: rag.citations.map((c) => ({
             corpus_id: c.corpus_id,
             section: c.section,
-            text: c.title,
+            text: c.text || c.title,  // quoted section text grounds the answer; title is the last resort
           })),
         }, req.id);
         if (!verification.grounded) UNGROUNDED.inc({ route: "/process" });
@@ -207,6 +212,7 @@ app.post("/process", async (req, res) => {
     let fhir = { written: false };
     try {
       const r = await fetch(`${MEDPLUM_FHIR_URL}/Communication`, {
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
         method: "POST",
         headers: {
           ...(await fhirHeaders()),
@@ -268,7 +274,7 @@ app.post("/signoff", async (req, res) => {
   }
   try {
     const getUrl = `${MEDPLUM_FHIR_URL}/Communication/${communicationId}`;
-    const g = await fetch(getUrl, { headers: await fhirHeaders({ Accept: "application/fhir+json" }) });
+    const g = await fetch(getUrl, { headers: await fhirHeaders({ Accept: "application/fhir+json" }), signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
     if (!g.ok) return res.status(404).json({ error: `Communication ${communicationId} not found` });
     const resource = await g.json();
 
@@ -279,6 +285,7 @@ app.post("/signoff", async (req, res) => {
     resource.payload[0].contentString = JSON.stringify(payload, null, 2);
 
     const p = await fetch(getUrl, {
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       method: "PUT",
       headers: await fhirHeaders(),
       body: JSON.stringify(resource),

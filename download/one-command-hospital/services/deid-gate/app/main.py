@@ -42,9 +42,29 @@ ENTITY_TYPES = [
 def load():
     global analyzer
     model = os.environ.get("SPACY_MODEL", "en_core_web_sm")
-    analyzer = AnalyzerEngine(nlp_engine=None, supported_languages=["en"])
-    # NOTE: for production, plug NlpEngineProvider with the downloaded model and
-    # raise score_threshold; keep v0 permissive (fail-safe = over-redact).
+    # Explicit engine: Presidio's built-in default hardcodes en_core_web_lg
+    # (400MB) and would silently attempt a model download on every cold boot.
+    # SPACY_MODEL (default sm, what the Dockerfile ships) keeps boots offline
+    # and fast; set SPACY_MODEL=en_core_web_lg for production recall.
+    from presidio_analyzer.nlp_engine import NlpEngineProvider
+    provider = NlpEngineProvider(nlp_configuration={
+        "nlp_engine_name": "spacy",
+        "models": [{"lang_code": "en", "model_name": model}],
+    })
+    analyzer = AnalyzerEngine(nlp_engine=provider.create_engine(),
+                              supported_languages=["en"])
+    # Fail-safe fallbacks for identifiers Presidio's default recognizers miss:
+    # 7-digit local US phone formats (clinical callback numbers) and MRN-like
+    # digit runs. Over-redact rather than under-redact is the stated posture.
+    from presidio_analyzer import Pattern, PatternRecognizer
+    analyzer.registry.add_recognizer(PatternRecognizer(
+        supported_entity="PHONE_NUMBER", name="us_local_phone_fallback",
+        patterns=[Pattern(name="us_local_phone",
+                          regex=r"\b\d{3}[-.\s]\d{4}\b", score=0.7)]))
+    analyzer.registry.add_recognizer(PatternRecognizer(
+        supported_entity="MEDICAL_LICENSE", name="digit_run_id_fallback",
+        patterns=[Pattern(name="digit_run_id",
+                          regex=r"\b\d{6,}\b", score=0.5)]))
 
 
 class DeidRequest(BaseModel):

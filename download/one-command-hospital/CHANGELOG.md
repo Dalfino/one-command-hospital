@@ -5,6 +5,44 @@ Format: [Keep a Changelog](https://keepachangelog.com/); versions: SemVer.
 This is a research project — **nothing here is cleared for clinical
 deployment** (see `docs/deployment_readiness.md` for the gate matrix).
 
+## [0.5.0] — Live Gate 5 evidence run (M17)
+
+### Added
+- **`tools/native_stack.sh`** — run the four AI services as bare processes
+  with the exact env the test containers get. Where docker is unavailable
+  (sandboxes, dev laptops, some air-gapped hosts) the same evidence is
+  producible: `make test-integration-native`, `make stack-prod` +
+  `make loadtest`. The integration tier is now **probe-first**: it tests
+  whichever healthy stack answers at the test ports (docker or native).
+- **Live load-test evidence** (`eval/evidence/loadtest_20u|50u.{csv,html}` +
+  Gate 5 table in `docs/deployment_readiness.md`): 20 users → 729 reqs, 0
+  errors, p50 18 ms / p95 29 ms; 50 users → 1840 reqs, 0 errors, p50 17 ms /
+  p95 31 ms; audit hash chain verified over 1,799 records post-load.
+  Mock-mode numbers — GPU-stack re-run still required for final sign-off.
+- Live tier now records the **generator gap as quantified xfail** under
+  `LIVE_MODE=extractive` (trap refusals 0/10, citation validity 11/15 = 73%,
+  red-team 1/3) and runs strict gates under `LIVE_MODE=gpu`.
+
+### Fixed — all four found by executing the tiers live (none unit-testable)
+- **Mediator↔verifier grounding contract**: the mediator sent citation
+  *titles* as verifier sources, so lexical grounding of a full answer against
+  a title always failed — the golden path could never verify grounded.
+  Citations now carry the quoted section text (`extract_citations` gained an
+  optional `section_text` map; built from retrieved sections only).
+- **Hung upstream = hung clinician**: no fetch timeout existed anywhere in
+  the mediator. A frozen verifier/deid/RAG (GIL stall, black hole — more
+  realistic than a dead container) blocked clinician requests forever. All
+  internal + FHIR fetches now use `AbortSignal.timeout(UPSTREAM_TIMEOUT_MS)`,
+  default 10 s, env-tunable; the fail-closed integration test SIGSTOPs the
+  verifier natively to regression-guard it.
+- **De-id recall gap**: Presidio defaults missed 7-digit local US phone
+  formats (classic clinical callback numbers). Added over-redact fallback
+  recognizers (local phone + MRN-like digit runs) at analyzer startup.
+- **Presidio cold-boot model download**: default NLP engine hardcoded
+  `en_core_web_lg` (400 MB download at container start; breaks offline boot).
+  Explicit `NlpEngineProvider` now honors `SPACY_MODEL` (default `sm`).
+- Makefile recipe indentation (spaces → tabs) — targets were unparseable.
+
 ## [0.4.0] — Commercial-standard & clinical-ready testing wave (M12–M16)
 
 ### Added — tests (M12)

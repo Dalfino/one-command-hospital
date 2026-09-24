@@ -76,8 +76,67 @@ Read this file before touching the demo kiosk. Update it after every milestone.
 | SMART widget builds and launches | ✅ done | Vite build green; OpenEMR/SMART launch registration ⬜ open |
 | One-command boot + preflight | ✅ done | `make doctor` + `make up` |
 | Escalation path visible to clinician in ≤2 clicks | ⬜ open | Widget has escalate button; in-EHR placement needs usability testing |
-| Latency budget: p95 ≤ 8s live | ⬜ open | Prefix caching enabled; needs live measurement |
+| Latency budget: p95 ≤ 8s live | ✅ measured (mock) | Live load test executed — see evidence below. GPU-stack re-run still required for the final live-LLM number |
 | Clinician feedback channel wired into roadmap | ⬜ open | Simple form → governance review queue |
+
+### Gate 5 evidence — live integration + load run (2026-09-24, native CPU sandbox)
+
+Environment: no docker, no GPU in this sandbox — the four AI services ran as
+bare processes with the identical env the test containers get
+(`tools/native_stack.sh up-test` / `up-prod`; mock-LLM extractive mode,
+Medplum deliberately unreachable). Evidence files in `eval/evidence/`.
+
+**Integration tier — 10/10 PASS** against the live stack (`pytest tests/integration -m integration`):
+golden path (cited + grounded + audit seq + X-Request-ID echo), off-corpus
+refusal, honest sign-off 502, audit chain verify, PHI white-out through deid
+gate AND the persisted Communication payload, fail-closed under a HUNG
+verifier (SIGSTOP → upstream timeout → flagged `pending_review`), audit chain
+intact after failures.
+
+Bugs the live run caught and fixed (none were catchable by unit tests):
+1. **Mediator↔verifier contract**: mediator sent citation *titles* as verifier
+   sources → lexical grounding always failed → golden path could never verify
+   grounded. Fix: RAG citations now carry the quoted section text
+   (`extract_citations(..., section_text)`), mediator forwards `c.text`.
+2. **Hung upstream = hung clinician**: no fetch timeout anywhere in the
+   mediator. A frozen verifier (GIL stall, network black hole — more realistic
+   than a dead container) blocked requests forever. Fix:
+   `AbortSignal.timeout(UPSTREAM_TIMEOUT_MS, default 10s)` on all internal +
+   FHIR fetches; regression-tested by the SIGSTOP fail-closed test.
+3. **De-id recall gap**: Presidio defaults missed 7-digit local US phone
+   formats (clinical callback numbers). Fix: fallback pattern recognizers
+   (local-phone + MRN-like digit runs) at analyzer startup.
+4. **Presidio cold-boot download**: default NLP engine hardcoded
+   `en_core_web_lg` (400MB download at container start, breaks offline boot).
+   Fix: explicit `NlpEngineProvider` honoring `SPACY_MODEL` (default sm).
+
+**Live tier** (`pytest tests/live`, `LIVE_MODE=extractive`) — records the
+GPU-gap as quantified xfail evidence:
+- trap refusals 0/10 (gate ≥90% is a generator judgment; extractive mode
+  quotes whatever section scored best — a lookalike question cannot be refused)
+- citation validity 11/15 = 73% (gate ≥80%; extractive cites top-1 only)
+- red-team: 1/3 avoided citation. Conclusion, with numbers: **refusal
+  discipline against paraphrase traps requires the GPU stack** — this tier
+  must run strict (`LIVE_MODE=gpu`) before any pilot sign-off.
+
+**Load test** (`locust`, ward-traffic shape 70% repeat / 20% unique / 10% ops):
+
+| Run | Users | Reqs | Errors | p50 | p95 | max | req/s |
+|---|---|---|---|---|---|---|---|
+| loadtest_20u | 20 | 729 | **0** | 18 ms | 29 ms | 300 ms | 6.1 |
+| loadtest_50u | 50 | 1840 | **0** | 17 ms | 31 ms | 88 ms | 15.4 |
+
+SLO gates: p50 < 2000 ms ✅ (83× headroom), p95 < 8000 ms ✅ (258× headroom),
+error rate < 1% ✅ (0%). Post-load: audit chain `ok: true` over 1,799 audited
+records; 99.9% of /process under 100 ms; refusal counter 38% (under the 40%
+RefusalFatigue alert — inflated by the synthetic "unique" scenario, which
+invents nonsense phrasings that SHOULD refuse).
+
+Caveats, stated plainly: these are **mock-mode, CPU-sandbox numbers**. They
+prove the pipeline architecture holds under load with the full
+de-id → retrieval → verify → audit path live. The GPU-stack re-run
+(`make up-gpu` + the same two commands) remains required evidence for the
+final sign-off, where LLM generation latency will dominate.
 
 ---
 

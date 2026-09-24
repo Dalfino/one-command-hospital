@@ -25,3 +25,10 @@ Procedure for a pilot sign-off:
    the ones that count for Gate 5.
 3. Snapshot Prometheus during the run (`make observe`) — refusal-fatigue and
    ungrounded counters must stay flat while latency climbs.
+
+## No-docker note
+
+`make loadtest` prefers a locally-installed locust (`pip install locust`) and
+falls back to the docker image. When docker is unavailable, boot the target
+stack with `make stack-prod` (bare-process, ports 8100-8103) first — see
+`tools/native_stack.sh`. Same scenarios, same SLO gates.

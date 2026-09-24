@@ -1,16 +1,19 @@
-# One-Command Hospital — Guideline Copilot (v0.4.0)
+# One-Command Hospital — Guideline Copilot (v0.5.0)
 
 A clinician asks a protocol question **inside the EHR** and gets a cited answer from the
 hospital's own guidelines — or an honest refusal. Zero PHI reaches the AI. One GPU. One command.
 
-> **Status: v0.4.0 — commercial-standard + clinical-ready testing wave landed (M12–M16).**
-> **Test pyramid: 37 unit + 17 node tests green in-repo; docker integration tier (golden path,
-> fail-closed, PHI white-out) + GPU live tier wired into CI.** Structured JSON logs with PHI
-> redaction + X-Request-ID tracing across all services. Edge TLS (`make edge-up`), verified
-> backup/restore drills, locust load test vs kill-criteria SLOs. CHANGELOG / CONTRIBUTING /
+> **Status: v0.5.0 — the integration + load tiers have been EXECUTED against a live stack.**
+> **Integration 10/10 vs running services (golden path, PHI white-out, fail-closed under a hung
+> verifier); load test 0 errors at 20 and 50 users, p50 ≈ 18 ms / p95 ≈ 31 ms (mock mode);
+> audit hash chain intact over 1,799 audited requests. Four real bugs found and fixed by the
+> live run (mediator↔verifier grounding contract, hung-upstream timeout, de-id phone recall,
+> Presidio cold-boot download). No docker? `make test-integration-native`.** Evidence in
+> `docs/deployment_readiness.md` (Gate 5) and `eval/evidence/`.
+> Structured JSON logs with PHI redaction + X-Request-ID tracing; edge TLS, backup/restore drills.
 > SECURITY / LICENSE / OpenAPI contract / SBOM register. Eval: **208 questions** — seed **98%**,
-> full **95%** (CI gate ≥80%). Three real bugs found and fixed by the new tests (see
-> tests/README.md). **NOT cleared for clinical deployment — see docs/deployment_readiness.md.**
+> full **95%** (CI gate ≥80%). **NOT cleared for clinical deployment — see
+> docs/deployment_readiness.md.**
 
 ## The 60-second version
 
@@ -111,8 +114,8 @@ docs/              architecture.md, improvements.md
 1. **Phase 0 (done):** stack up, eval harness green, synthetic hospital populated.
 2. **Phase 1 (complete):** SMART widget ✅ · Bot JWT auth ✅ · ConText verifier ✅ ·
    hybrid retrieval ✅ · eval 208 questions ✅ · hardening wave M7–M11 ✅ ·
-   test pyramid + CI integration gate M12–M16 ✅ ·
-   OpenHIM registration ⬜ · live-mode trap-refusal gate ⬜.
+   test pyramid + CI integration gate M12–M16 ✅ · **live integration + load evidence M17 ✅** ·
+   OpenHIM registration ⬜ · live-mode trap-refusal gate ⬜ (GPU stack).
 3. **Phase 2:** real hospital protocols + steward sign-off, live-mode eval, TLS +
    pen test, Orthanc + OHIF imaging layer, MedGemma pre-read (Recipe B).
 4. **Phase 3:** MIMIC-code validation pathway, federated testbed, device layer.
@@ -138,6 +141,7 @@ docs/              architecture.md, improvements.md
 | M14 | edge/ops | Caddy TLS profile (`make edge-up` :8443), verified backup/restore drills (audit ledger included), locust load test vs kill-criteria SLOs |
 | M15 | hygiene | CHANGELOG, CONTRIBUTING, SECURITY policy, Apache-2.0 LICENSE, OpenAPI 3.1 contract, SBOM + license register, CI: node tests + docker integration job |
 | M16 | sync | README/portal truth sync, v0.4.0, worklog |
+| M17 | evidence | **Live Gate 5 run**: integration 10/10 vs native stack, locust 20u+50u (0 errors, p95 31 ms, mock), audit chain intact @1,799 records, live-tier GPU-gap quantified (0/10 traps, 73% cites in extractive). **Found + fixed: verifier grounding contract, no upstream timeout (hung verifier hung clinician), 7-digit phone de-id gap, Presidio lg cold-boot download**. `make test-integration-native` + `make loadtest` now docker-optional |
 
 ## Licensing note
 

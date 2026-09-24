@@ -178,3 +178,28 @@ Stage Summary:
 - v0.4.0 LANDED: the repo now has the testing + hygiene layer that "commercial-standard" means in practice — 54 in-repo tests green, integration tier in CI proving golden path/fail-closed/PHI-white-out against real containers, trace ids end-to-end, TLS edge, verified backups, load-test SLO harness, and the full commercial doc set (LICENSE/CHANGELOG/CONTRIBUTING/SECURITY/OpenAPI/SBOM).
 - Remaining to clinical-ready (unchanged blockers, now test-ready): real protocols + steward sign-off, GPU live-mode eval run (test tier already written), TLS with real certs + pen test, structured-log shipping off-box, backup drill EXECUTED on deployed stack, load test run on GPU stack for Gate 5 evidence, regulatory counsel.
 - Next actions for user: provide ROTATED PAT → push M12–M16 (reconcile history), then optionally run `make test-integration` + `make loadtest` on the GPU host for live evidence.
+
+---
+Task ID: 14 (main agent)
+Task: "use the same PAT + run make test-integration + make loadtest in sandbox for Gate 5 live evidence, then continue what's still not done"
+
+Work Log:
+- PAT: NOT cached anywhere in the sandbox (previous session used it inline-only per policy; searched worklog, scripts, git config, credentials, reflog, tool-results). Push remains pending — user must re-share the token (old one should be rotated anyway).
+- Sandbox reality: no docker, no GPU. Decision: make the native path first-class — boot the 4 services as bare processes with the identical env the test containers get.
+- tools/native_stack.sh (new): up-test (8210-13) / up-prod (8100-13) / down / status; PID files in /tmp/och-native-stack double as the fail-closed test's SIGSTOP handles; per-instance PID/log names to avoid cross-stack collisions.
+- tests/integration/conftest.py: probe-first fixture — tests whichever healthy stack answers (docker bootstrap is now optional, not a gate).
+- tests/integration/test_fail_closed.py: native SIGSTOP/SIGCONT verifier-kill path alongside docker compose stop/start.
+- Executed integration tier vs LIVE native stack: 10/10 PASS (golden path grounded+cited+audited, PHI white-out both surfaces, fail-closed hung-verifier, honest sign-off 502, audit chain). Bugs found by running it live, all fixed:
+  1. Mediator sent citation TITLES as verifier sources -> grounding always failed -> golden path could never pass. Fix: RAG citations now carry quoted section text (extract_citations section_text map from retrieved sections only); mediator forwards c.text||c.title.
+  2. No fetch timeouts anywhere in mediator — a HUNG verifier hung clinician requests forever (SIGSTOP proved it; docker stop had masked it). Fix: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS default 10s) on all internal + FHIR fetches.
+  3. Presidio missed 7-digit local US phones (555-0143) — real PHI recall gap. Fix: over-redact fallback PatternRecognizers (local phone + MRN-like digit runs) at startup.
+  4. Presidio default engine hardcoded en_core_web_lg -> 400MB download at cold boot (breaks offline docker boot too). Fix: explicit NlpEngineProvider honoring SPACY_MODEL (default sm).
+  5. Test-file bugs: phi-leak _post 2-tuple vs 3-tuple callers; signoff test raised on honest 502 instead of asserting it.
+  6. Makefile recipe lines were spaces (unparseable) — converted to tabs; loadtest target now prefers local locust, docker fallback.
+- Live tier (tests/live): extractive mode records the GPU gap as quantified xfail (trap refusals 0/10 vs >=90% gate; citation validity 11/15=73% vs 80%; red-team 1/3) — refusal discipline against paraphrase traps is a GENERATOR judgment. LIVE_MODE=gpu runs strict. OOV-coverage-gate prototype evaluated and rejected with data (147/153 answerable would be wrongly flagged).
+- Load test vs prod-shape native stack (locust, ward shape 70/20/10): 20u -> 729 reqs 0 errors p50 18ms p95 29ms; 50u -> 1840 reqs 0 errors p50 17ms p95 31ms max 88ms; 15.4 req/s. SLO gates <2000/<8000ms crushed (mock mode). Post-load: audit chain ok=true over 1,799 records; 99.9% /process <100ms; refusal counter 38% (under 40% RefusalFatigue alert, inflated by synthetic unique nonsense).
+- Evidence: eval/evidence/loadtest_{20u,50u}.{csv,html}; Gate 5 table + full narrative in docs/deployment_readiness.md; README v0.5.0 + M17 row; CHANGELOG 0.5.0; portal willow-data.ts synced (proof metric 31ms p95 card, M17 roadmap bullet) in workspace + repo copy; bun lint exit 0.
+
+Stage Summary:
+- GATE 5 EVIDENCE PRODUCED IN SANDBOX: make test-integration-native (10/10) + make loadtest (0 errors) against a live 4-service stack, with 4 real bugs fixed and regression-guarded. Mock-mode caveat stated everywhere; GPU-stack re-run remains the final sign-off requirement.
+- PUSH STILL PENDING: needs PAT re-shared in chat (old one not stored here; rotate the previously-shared one). On push: reconcile rewritten local history with GitHub M0-M6 (re-apply M7-M17 as commits on remote main).

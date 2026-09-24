@@ -17,16 +17,32 @@ from conftest import DEID, RAG, VERIFIER, MEDIATOR
 
 
 def _get(url):
-    with urllib.request.urlopen(url, timeout=30) as r:
-        return r.status, json.loads(r.read()), dict(r.headers)
+    try:
+        with urllib.request.urlopen(url, timeout=30) as r:
+            return r.status, json.loads(r.read()), dict(r.headers)
+    except urllib.error.HTTPError as e:
+        # error statuses are legitimate expectations in this tier (e.g. the
+        # honest 502 when Medplum is absent) — return them, don't raise
+        body = e.read()
+        try:
+            return e.code, json.loads(body), dict(e.headers)
+        except Exception:
+            return e.code, {}, dict(e.headers)
 
 
 def _post(url, body, timeout=120):
     req = urllib.request.Request(
         url, data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.status, json.loads(r.read()), dict(r.headers)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.status, json.loads(r.read()), dict(r.headers)
+    except urllib.error.HTTPError as e:
+        body = e.read()
+        try:
+            return e.code, json.loads(body), dict(e.headers)
+        except Exception:
+            return e.code, {}, dict(e.headers)
 
 
 def test_all_four_services_healthy(stack_ready):

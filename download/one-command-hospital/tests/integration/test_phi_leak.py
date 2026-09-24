@@ -8,6 +8,7 @@ real PHI in tests.
 """
 import json
 import urllib.request
+import urllib.error
 
 import pytest
 
@@ -25,8 +26,15 @@ def _post(url, body, timeout=120):
     req = urllib.request.Request(
         url, data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.status, json.loads(r.read())
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.status, json.loads(r.read()), dict(r.headers)
+    except urllib.error.HTTPError as e:
+        body = e.read()
+        try:
+            return e.code, json.loads(body), dict(e.headers)
+        except Exception:
+            return e.code, {}, dict(e.headers)
 
 
 def test_deid_gate_strips_every_planted_identifier(stack_ready):

@@ -316,8 +316,8 @@ export type ProofMetric = {
 export const PROOF_METRICS: ProofMetric[] = [
   { to: 208, suffix: "", label: "questions in the exam", sub: "153 traced + 55 refusal traps; hand-written seed kept verbatim" },
   { to: 95, suffix: "%", label: "retrieval on the full exam", sub: "146 of 153 traced items; seed set holds 98%" },
-  { to: 54, suffix: "", label: "unit + node tests green", sub: "plus docker integration tier: golden path, fail-closed, PHI white-out" },
-  { to: 80, suffix: "%", label: "CI floor", sub: "retrieval below this fails the build" },
+  { to: 54, suffix: "", label: "unit + node tests green", sub: "plus integration tier EXECUTED live: golden path, fail-closed, PHI white-out 10/10" },
+  { to: 31, suffix: " ms", label: "p95 under a 50-user load", sub: "0 errors across 2,569 requests; SLO gate was <8,000 ms (mock mode)" },
 ];
 
 export const GRADED_ON = ["Retrieval hit rate", "Citation validity", "Refusal correctness"];
@@ -589,6 +589,7 @@ export const PHASES: Phase[] = [
       { text: "Eval set grows 52 → 208 questions (95% full / 98% seed)", done: true },
       { text: "Hardening wave: audit chain, observability, CI, readiness gate", done: true },
       { text: "Test pyramid: 54 unit/node tests + docker golden-path & PHI-leak tier in CI", done: true },
+      { text: "Live Gate 5 run: integration 10/10 vs running services; load 0 errors, p95 31 ms (mock)", done: true },
       { text: "Tracing: JSON logs (PHI-redacting) + X-Request-ID across all services", done: true },
       { text: "Edge TLS, verified backup/restore drills, load test vs kill-criteria SLOs", done: true },
       { text: "Commercial hygiene: LICENSE, CHANGELOG, SECURITY, OpenAPI, SBOM register", done: true },

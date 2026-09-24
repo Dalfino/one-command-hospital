@@ -117,10 +117,16 @@ class Question(BaseModel):
 CITE_RE = re.compile(r"\[([A-Z][A-Z0-9-]+)\s*§(\d+)\]")
 
 
-def extract_citations(raw: str, manifest: dict) -> List["Citation"]:
+def extract_citations(raw: str, manifest: dict, section_text: dict | None = None) -> List["Citation"]:
     """Pull [CORPUS_ID §N] markers out of generator output, dedupe, and drop
     anything not in the manifest — a citation the corpus can't back is not a
-    citation. Pure function so the eval/tests can exercise it without HTTP."""
+    citation. Pure function so the eval/tests can exercise it without HTTP.
+
+    section_text: optional {(corpus_id, str(section)) -> chunk text} map. When
+    given, each citation carries the quoted section text downstream — the
+    verifier needs it for lexical grounding (a title alone cannot ground an
+    answer)."""
+    section_text = section_text or {}
     cites, seen = [], set()
     for cid, sec in CITE_RE.findall(raw):
         if (cid, sec) in seen or cid not in manifest:
@@ -128,7 +134,8 @@ def extract_citations(raw: str, manifest: dict) -> List["Citation"]:
         seen.add((cid, sec))
         e = manifest[cid]
         cites.append(Citation(corpus_id=cid, section=sec,
-                              edition=e["edition"], title=e["title"]))
+                              edition=e["edition"], title=e["title"],
+                              text=section_text.get((cid, str(sec)), "")))
     return cites
 
 
@@ -137,6 +144,7 @@ class Citation(BaseModel):
     section: str
     edition: str
     title: str
+    text: str = ""  # quoted section text — grounding evidence for the verifier
 
 
 class Answer(BaseModel):
@@ -241,7 +249,9 @@ def answer(q: Question):
                         int((time.time() - t0) * 1000), retrieval_meta)
 
     # Improvement #2: stamp every citation with the manifest edition + title.
-    cites = extract_citations(raw, manifest)
+    # Text map built from the RETRIEVED sections only (never the whole corpus).
+    sec_text = {(s["corpus_id"], str(s["section"])): s["text"] for s in hits}
+    cites = extract_citations(raw, manifest, sec_text)
 
     result = Answer(answer=raw, citations=cites, refusal=False,
                     latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL,

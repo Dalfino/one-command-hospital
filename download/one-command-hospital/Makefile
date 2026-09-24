@@ -1,5 +1,5 @@
 .PHONY: help up up-gpu down logs patients conformance eval eval-full observe doctor audit-verify \
-        test-unit test-node test-integration edge-up edge-down backup restore loadtest clean
+	test-unit test-node test-integration test-integration-native stack-prod stack-stop edge-up edge-down backup restore loadtest clean
 
 help:
 	@echo "One-Command Hospital"
@@ -15,8 +15,9 @@ help:
 	@echo "  make audit-verify walk the hash-chained audit log via ai-mediator"
 	@echo "  make test-unit    pytest unit tier (fast, no docker) — security & logic"
 	@echo "  make test-node    node tests — audit chain, log redaction, metrics"
-	@echo "  make test-integration boot test stack + golden path / fail-closed / PHI"
-	@echo "  make loadtest     locust load test vs mediator (SLO evidence)"
+	@echo "  make test-integration         boot docker test stack + golden path / fail-closed / PHI"
+	@echo "  make test-integration-native  same suite, no docker (bare-process stack)"
+	@echo "  make loadtest                 locust load test vs mediator (SLO evidence)"
 	@echo "  make backup       verified backup (repo + audit ledger, sha256 manifest)"
 	@echo "  make restore      verified restore drill (FILE=backups/<name>.tar.gz)"
 	@echo "  make down         stop everything"
@@ -75,10 +76,35 @@ test-integration:
 	status=$$?; docker compose -f tests/integration/docker-compose.test.yml down -v; \
 	exit $$status
 
+# No-docker path (sandboxes, dev laptops, air-gapped hosts): boots the four
+# services as bare processes with the same env the test containers get, runs
+# the SAME integration tier, then stops them. Evidence is equivalent by design.
+test-integration-native:
+	bash tools/native_stack.sh up-test
+	python3 -m pip install -q -r tests/requirements.txt
+	python3 -m pytest tests/integration -m integration -q; \
+	status=$$?; bash tools/native_stack.sh down; \
+	exit $$status
+
+# Bare-process prod-shape stack (ports 8100-8103) — what loadtest targets when
+# docker is unavailable. `make stack-stop` tears it down.
+stack-prod:
+	bash tools/native_stack.sh up-prod
+
+stack-stop:
+	bash tools/native_stack.sh down
+
 loadtest:
-	docker run --rm --network host -v $(PWD)/tools/loadtest:/mnt/locust \
-		locustio/locust -f /mnt/locust/locustfile.py --headless \
-		-u $(or $(LOCUST_USERS),20) -r 2 -t $(or $(LOCUST_RUN_TIME),2m)
+	@if command -v locust >/dev/null 2>&1; then \
+		locust -f tools/loadtest/locustfile.py --headless \
+			-u $(or $(LOCUST_USERS),20) -r 2 -t $(or $(LOCUST_RUN_TIME),2m) \
+			--host $(or $(LOCUST_HOST),http://localhost:8103); \
+	else \
+		echo "locust not found — falling back to docker image"; \
+		docker run --rm --network host -v $(PWD)/tools/loadtest:/mnt/locust \
+			locustio/locust -f /mnt/locust/locustfile.py --headless \
+			-u $(or $(LOCUST_USERS),20) -r 2 -t $(or $(LOCUST_RUN_TIME),2m); \
+	fi
 
 backup:
 	bash tools/backup.sh
