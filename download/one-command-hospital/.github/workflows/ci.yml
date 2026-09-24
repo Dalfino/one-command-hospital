@@ -1,0 +1,95 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  eval-gate:
+    name: Eval gate (retrieval ≥ 80%)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install eval deps
+        run: pip install -r eval/requirements.txt
+      - name: Seed eval (52 questions, fast)
+        run: python eval/run_eval.py qa_seed.yaml
+      - name: Full eval (208 questions, CI gate)
+        run: python eval/run_eval.py qa_full.yaml
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-reports
+          path: |
+            eval/report.md
+            eval/report_full.md
+
+  python-check:
+    name: Python compile + YAML validity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile all service Python
+        run: |
+          python -m py_compile services/deid-gate/app/main.py services/deid-gate/app/hardening.py \
+            services/guideline-rag/app/main.py services/guideline-rag/app/hardening.py \
+            services/guideline-rag/app/retrieval.py \
+            services/verifier/app/main.py services/verifier/app/hardening.py \
+            eval/run_eval.py eval/generate_eval.py
+      - name: Validate YAML (compose, manifest, observe, eval)
+        run: |
+          python - <<'PY'
+          import yaml, glob
+          files = ["docker-compose.yml", "guidelines/manifest.yaml"] + \
+                  glob.glob("observe/**/*.yml", recursive=True) + \
+                  glob.glob("observe/**/*.yaml", recursive=True) + \
+                  glob.glob("eval/qa_*.yaml")
+          for f in files:
+              with open(f) as fh:
+                  yaml.safe_load(fh)
+              print("ok", f)
+          PY
+
+  node-check:
+    name: Node syntax + smart-app build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax-check mediator JS
+        run: |
+          node --check services/ai-mediator/main.js
+          node --check services/ai-mediator/medplum-auth.js
+          node --check services/ai-mediator/audit.js
+          node --check services/ai-mediator/metrics.js
+      - name: Build SMART widget
+        working-directory: smart-app
+        run: |
+          npm install
+          npm run build
+
+  compose-validate:
+    name: Compose config + secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose file (dummy env values)
+        run: |
+          docker compose --env-file /dev/null config -q \
+            || OPENEMR_DB_ROOT_PASS=x OPENEMR_DB_PASS=x OPENEMR_ADMIN_USER=x OPENEMR_ADMIN_PASS=x \
+               MEDPLUM_DB_PASS=x HAPI_DB_PASS=x docker compose config -q
+      - name: Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

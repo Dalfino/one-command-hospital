@@ -1,0 +1,65 @@
+# Alert rules — the copilot's smoke detectors.
+# Philosophy: alert on PATIENT-SAFETY-relevant signals (refusal fatigue,
+# ungrounded answers, audit integrity) and ops signals (down, slow, 5xx).
+groups:
+  - name: copilot-safety
+    rules:
+      # Refusal fatigue: if we refuse >40% of questions over 15m, the corpus or
+      # the retrieval config has drifted — clinicians stop trusting a silent tool.
+      - alert: CopilotHighRefusalRate
+        expr: >
+          sum(rate(rag_refusals_total[15m]))
+            / clamp_min(sum(rate(http_requests_total{job="guideline-rag",route="/answer"}[15m])), 0.001)
+            > 0.40
+        for: 10m
+        labels: {severity: warning, domain: safety}
+        annotations:
+          summary: "Guideline Copilot refusing >40% of questions (refusal fatigue)"
+          runbook: docs/governance.md#incident-response
+
+      # Ungrounded answers passing through the mediator = the dangerous direction.
+      - alert: CopilotUngroundedAnswers
+        expr: sum(rate(mediator_ungrounded_total[10m])) > 0
+        for: 5m
+        labels: {severity: critical, domain: safety}
+        annotations:
+          summary: "Ungrounded answers detected — human review loop must catch these"
+          runbook: docs/governance.md#incident-response
+
+      # Latency: kill-criteria says >8s median kills trust; alert earlier at p95.
+      - alert: CopilotHighLatencyP95
+        expr: >
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_ms_bucket{job="guideline-rag",route="/answer"}[10m])) by (le))
+          > 8000
+        for: 15m
+        labels: {severity: warning, domain: trust}
+        annotations:
+          summary: "p95 answer latency above 8s — kill-criteria threshold approaching"
+
+      - alert: CopilotHighErrorRate
+        expr: >
+          sum(rate(http_requests_total{code=~"5.."}[10m]))
+            / clamp_min(sum(rate(http_requests_total[10m])), 0.001) > 0.05
+        for: 10m
+        labels: {severity: warning, domain: ops}
+        annotations:
+          summary: "5xx rate above 5% across hospital services"
+
+  - name: copilot-integrity
+    rules:
+      # Audit chain broken = tampering or torn write. SEV-2 per governance runbook.
+      - alert: AuditChainBroken
+        expr: increase(audit_verify_failures_total[5m]) > 0
+        for: 0m
+        labels: {severity: critical, domain: integrity}
+        annotations:
+          summary: "Hash-chain verification failed — audit log may be tampered"
+          runbook: docs/governance.md#incident-response
+
+      - alert: ServiceDown
+        expr: up{job=~"guideline-rag|deid-gate|verifier|ai-mediator"} == 0
+        for: 2m
+        labels: {severity: critical, domain: ops}
+        annotations:
+          summary: "{{ $labels.job }} is down"

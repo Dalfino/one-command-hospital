@@ -1,0 +1,25 @@
+# Prometheus scrape config for the One-Command Hospital observability profile.
+# All targets are service DNS names on the `hospital` network — no host access
+# needed from Prometheus. Scraping our four AI services; infra tiers (OpenEMR,
+# Medplum, OpenHIM) expose their own metrics endpoints and can be added as they
+# are confirmed.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - alert_rules.yml
+
+scrape_configs:
+  - job_name: guideline-rag
+    static_configs:
+      - targets: ["guideline-rag:8000"]
+  - job_name: deid-gate
+    static_configs:
+      - targets: ["deid-gate:8000"]
+  - job_name: verifier
+    static_configs:
+      - targets: ["verifier:8000"]
+  - job_name: ai-mediator
+    static_configs:
+      - targets: ["ai-mediator:3000"]

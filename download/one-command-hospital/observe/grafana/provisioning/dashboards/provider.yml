@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - name: one-command-hospital
+    orgId: 1
+    folder: "One-Command Hospital"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards

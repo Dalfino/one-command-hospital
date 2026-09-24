@@ -1,0 +1,93 @@
+{
+  "title": "Guideline Copilot — Safety & Ops",
+  "uid": "och-copilot-v1",
+  "schemaVersion": 39,
+  "editable": true,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Answer requests / s (guideline-rag)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum(rate(http_requests_total{job=\"guideline-rag\",route=\"/answer\"}[5m]))", "legendFormat": "req/s" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "id": 2,
+      "title": "Answer latency (p50 / p95, ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_ms_bucket{job=\"guideline-rag\",route=\"/answer\"}[5m])) by (le))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{job=\"guideline-rag\",route=\"/answer\"}[5m])) by (le))", "legendFormat": "p95" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "thresholdsStyle": { "mode": "dashed" } } }, "overrides": [] }
+    },
+    {
+      "id": 3,
+      "title": "Refusal rate (fatigue detector)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "sum(rate(rag_refusals_total[15m])) / clamp_min(sum(rate(http_requests_total{job=\"guideline-rag\",route=\"/answer\"}[15m])), 0.001)", "legendFormat": "refusal ratio" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 0.25 }, { "color": "red", "value": 0.4 } ] } }, "overrides": [] }
+    },
+    {
+      "id": 4,
+      "title": "Ungrounded answers (mediator) — MUST be ~0",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "sum(rate(mediator_ungrounded_total[10m]))", "legendFormat": "ungrounded/s" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 0 } ] } }, "overrides": [] }
+    },
+    {
+      "id": 5,
+      "title": "Retrieval top score (last, by service)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "rag_top_score_last", "legendFormat": "top-1 score" },
+        { "expr": "rag_margin_last", "legendFormat": "top1-top2 margin" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] }
+    },
+    {
+      "id": 6,
+      "title": "Verifier grounding score (last)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "verifier_grounding_score_last", "legendFormat": "grounding" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] }
+    },
+    {
+      "id": 7,
+      "title": "De-ID findings / s (PHI pressure at the gate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        { "expr": "sum(rate(deid_findings_total[5m]))", "legendFormat": "findings/s" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] }
+    },
+    {
+      "id": 8,
+      "title": "Audit trail health (records + verify failures)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        { "expr": "audit_records_last", "legendFormat": "records" },
+        { "expr": "increase(audit_verify_failures_total[1h])", "legendFormat": "verify failures (1h)" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] }
+    }
+  ]
+}

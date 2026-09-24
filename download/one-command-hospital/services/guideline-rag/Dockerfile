@@ -1,11 +1,14 @@
 FROM python:3.12-slim
 WORKDIR /app
+RUN useradd --system --uid 10001 --no-create-home appuser
 COPY requirements.txt .
 ARG WITH_SBERT=false
 RUN pip install --no-cache-dir -r requirements.txt \
     && if [ "$WITH_SBERT" = "true" ]; then pip install --no-cache-dir sentence-transformers; fi
 COPY app ./app
+# guidelines/ is mounted read-only at runtime; nothing is written at runtime.
+USER appuser
 EXPOSE 8000
-# Enable with: docker compose build --build-arg WITH_SBERT=true guideline-rag
+# Enable SBERT with: docker compose build --build-arg WITH_SBERT=true guideline-rag
 # and VECTOR_BACKEND=sbert in the service environment.
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

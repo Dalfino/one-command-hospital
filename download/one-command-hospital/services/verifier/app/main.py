@@ -1,4 +1,4 @@
-"""Verifier — the strict teacher who checks the librarian's quotes.
+"""Verifier — the strict teacher who checks the librarian's quotes (v0.3).
 
 Improvement #3, Phase 1: NLP-as-verifier with medspaCy ConText.
 
@@ -11,6 +11,8 @@ Checks, in order:
   3. Lexical grounding — content-word overlap between answer and sources.
 
 Engine reported in /health: "medspacy-context" or "heuristic-v0".
+v0.3 hardening: NLP pipeline built ONCE (was per request), /metrics with
+conflict + grounding collectors, rate limit, body-size cap, security headers.
 """
 import re
 from typing import List
@@ -18,7 +20,16 @@ from typing import List
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-app = FastAPI(title="verifier", version="0.2.0")
+from .hardening import Counter, Gauge, install
+
+app = FastAPI(title="verifier", version="0.3.0")
+
+CONFLICTS = Counter("verifier_polarity_conflicts_total", "Polarity conflicts found.")
+INVALID_CITES = Counter("verifier_invalid_citations_total", "Citations not in retrieved sources.")
+GROUNDING = Gauge("verifier_grounding_score_last", "Lexical grounding score of the last verify.")
+UNGROUNDED = Counter("verifier_ungrounded_total", "Verdicts that failed grounding.")
+install(app, "verifier", extra=[CONFLICTS, INVALID_CITES, GROUNDING, UNGROUNDED])
+
 WORD = re.compile(r"[a-z0-9]+")
 CITE = re.compile(r"\[([A-Z][A-Z0-9-]+)\s*§(\d+)\]")
 
@@ -31,10 +42,15 @@ NEG_CUES = {"never", "avoid", "contraindicated", "not recommended", "should not"
             "must not", "no bridging", "not required", "does not", "not covered",
             "do not", "without"}
 
+_NLP_CACHE: dict = {}
+
 
 def _build_nlp():
-    """medspaCy pipeline (sentencizer + target_matcher + ConText). Built fresh
-    per request — low volume, short texts; keeps rule state per-answer clean."""
+    """medspaCy pipeline (sentencizer + target_matcher + ConText). Built ONCE
+    and cached — the rule state is read-only at inference time, so a shared
+    pipeline is safe and keeps verify latency flat."""
+    if "nlp" in _NLP_CACHE:
+        return _NLP_CACHE["nlp"], _NLP_CACHE["TargetRule"]
     try:
         import medspacy  # noqa: F401
         from medspacy.context import ConTextComponent
@@ -45,8 +61,12 @@ def _build_nlp():
         nlp.add_pipe("sentencizer")
         nlp.add_pipe("target_matcher")
         nlp.add_pipe("medspacy_context")
+        _NLP_CACHE["nlp"] = nlp
+        _NLP_CACHE["TargetRule"] = TargetRule
         return nlp, TargetRule
     except Exception:
+        _NLP_CACHE["nlp"] = None
+        _NLP_CACHE["TargetRule"] = None
         return None, None
 
 
@@ -69,9 +89,8 @@ def _polarity_map(nlp, TargetRule, text: str, anchors: List[str]) -> dict:
                 idx = i + len(w)
         return pol
 
-    from medspacy.target_matcher import TargetRule as TR  # bound name
     matcher = nlp.get_pipe("target_matcher")
-    matcher.add([TR(literal=w, category="CLAIM") for w in anchors])
+    matcher.add([TargetRule(literal=w, category="CLAIM") for w in anchors])
     pol = {}
     for doc in nlp.pipe([text] if isinstance(text, str) else text):
         for ent in doc.ents:
@@ -108,6 +127,7 @@ def verify(req: VerifyRequest):
             invalid.append(f"[{cid} §{sec}]")
     if invalid:
         notes.append("answer cites section(s) not in retrieved sources")
+        INVALID_CITES.inc({"route": "/verify"}, len(invalid))
 
     # 2. negation/polarity consistency (ConText when available)
     cited_text = " ".join(src_map.values())
@@ -129,14 +149,20 @@ def verify(req: VerifyRequest):
             conflicts.append(f"'{w}' affirmed in answer but negated in source")
     if conflicts:
         notes.append("polarity conflicts — human review required")
+        CONFLICTS.inc({"route": "/verify"}, len(conflicts))
 
     # 3. lexical grounding
     ans_words = {w for w in WORD.findall(req.answer.lower()) if w not in STOP}
     src_words = {w for w in WORD.findall(cited_text.lower()) if w not in STOP}
     grounding = len(ans_words & src_words) / max(len(ans_words), 1)
+    GROUNDING.set({"route": "/verify"}, round(grounding, 3))
+
+    grounded = (not invalid) and grounding >= 0.45 and not conflicts
+    if not grounded:
+        UNGROUNDED.inc({"route": "/verify"})
 
     return VerifyResponse(
-        grounded=(not invalid) and grounding >= 0.45 and not conflicts,
+        grounded=grounded,
         grounding_score=round(grounding, 3),
         invalid_citations=invalid,
         polarity_conflicts=conflicts,

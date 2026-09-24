@@ -20,7 +20,9 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 GUIDELINES = ROOT / "guidelines"
-QUESTIONS = yaml.safe_load((pathlib.Path(__file__).parent / "qa_seed.yaml").read_text())["questions"]
+# Usage: run_eval.py [questions.yaml]   (default: qa_seed.yaml; CI also runs qa_full.yaml)
+_qfile = sys.argv[1] if len(sys.argv) > 1 else "qa_seed.yaml"
+QUESTIONS = yaml.safe_load((pathlib.Path(__file__).parent / _qfile).read_text())["questions"]
 
 try:
     from rank_bm25 import BM25Okapi
@@ -137,11 +139,15 @@ def main():
     lines += ["", "| id | expected | hit | answer | top retrieved |", "|---|---|---|---|---|"]
     for r in rows:
         lines.append(f'| {r["id"]} | {r["expected"]} | {r["retrieval_hit"]} | {r.get("answer", "-")} | {r["top"]} |')
-    (pathlib.Path(__file__).parent / "report.md").write_text("\n".join(lines))
+    (pathlib.Path(__file__).parent / _report_name()).write_text("\n".join(lines))
     print("\n".join(lines[:6]))
-    print(f"→ full report: {pathlib.Path(__file__).parent / 'report.md'}")
+    print(f"→ full report: {pathlib.Path(__file__).parent / _report_name()}")
     if n_ans and hits < 0.8 * n_ans:
         sys.exit(2)  # CI gate: retrieval below 80% fails the build
+
+
+def _report_name():
+    return "report.md" if len(sys.argv) <= 1 or sys.argv[1].endswith("qa_seed.yaml") else "report_full.md"
 
 
 if __name__ == "__main__":

@@ -1,0 +1,938 @@
+# Generated eval set — DO NOT HAND-EDIT (run eval/generate_eval.py to rebuild).
+# Composition: 52 hand-written seed items + 63 template + 21 keyword-probe + 21 navigation + 6 edition + 45 refusal traps = 208 items.
+# Answerable generated items are graded on retrieval + citation validity;
+# refusal traps are graded on the live service refusing (full mode).
+questions:
+- id: a01
+  question: How many days before elective surgery should warfarin be interrupted?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '3'
+  must_contain:
+  - 5 days
+- id: a02
+  question: Does a low-risk patient with atrial fibrillation need bridging before a minor procedure?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '3'
+  must_contain:
+  - no bridging
+- id: a03
+  question: Which patients are classified as high thromboembolic risk in our bridging protocol?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '2'
+  must_contain:
+  - mechanical mitral valve
+- id: a04
+  question: What INR threshold must be met before the procedure proceeds?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '4'
+  must_contain:
+  - '1.5'
+- id: a05
+  question: What should be given if INR is 1.8 on the day before surgery?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '4'
+  must_contain:
+  - vitamin K
+- id: a06
+  question: When can warfarin be resumed after a minor procedure with adequate haemostasis?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '5'
+  must_contain:
+  - '12'
+- id: a07
+  question: How long is therapeutic anticoagulation delayed after a high-bleed-risk procedure?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '5'
+  must_contain:
+  - '48'
+- id: a08
+  question: Is bridging required for a patient with a mechanical mitral valve?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '6'
+  must_contain:
+  - bridging is required
+- id: a09
+  question: When is the last pre-operative LMWH dose given?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '3'
+  must_contain:
+  - 24 hours
+- id: a10
+  question: Who should be contacted when there is uncertainty about the bridging plan?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '7'
+  must_contain:
+  - anticoagulation stewardship pharmacist
+- id: a11
+  question: How far ahead of theatre should warfarin be stopped for an elective case?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '3'
+  must_contain:
+  - 5 days
+- id: a12
+  question: A patient with a mechanical mitral valve is listed for colonoscopy — do they need a bridging
+    plan?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '6'
+  must_contain:
+  - bridging is required
+- id: a13
+  question: What is the warfarin restart plan after a high-bleed-risk operation?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '5'
+  must_contain:
+  - '48'
+- id: a14
+  question: INR is 1.7 the afternoon before theatre — what does the protocol say to do?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '4'
+  must_contain:
+  - vitamin K
+- id: s01
+  question: How often are inpatients screened for sepsis?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '2'
+  must_contain:
+  - shift
+- id: s02
+  question: What are the qSOFA components used in our screening protocol?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '2'
+  must_contain:
+  - '22'
+- id: s03
+  question: How quickly must the responding team be notified after a positive sepsis screen?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '3'
+  must_contain:
+  - 15 minutes
+- id: s04
+  question: How soon is senior clinical review required after a positive screen?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '3'
+  must_contain:
+  - 30 minutes
+- id: s05
+  question: How many blood culture sets are taken before antibiotics in the first-hour bundle?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+  must_contain:
+  - two sets
+- id: s06
+  question: What is the antibiotic administration target in the first-hour bundle?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+  must_contain:
+  - 60 minutes
+- id: s07
+  question: What fluid volume is used for hypotension or lactate at or above 4 mmol/L?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+  must_contain:
+  - 30 mL/kg
+- id: s08
+  question: When should lactate be repeated after the initial measurement?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+  must_contain:
+  - 2 hours
+- id: s09
+  question: Who audits sepsis screening documentation and how often?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '5'
+  must_contain:
+  - monthly
+- id: s10
+  question: Who do we escalate to if a ward has no resident senior cover?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '3'
+  must_contain:
+  - on-call medical registrar
+- id: s11
+  question: Respiratory rate 24, systolic 95, newly confused — does this screen positive for sepsis?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '2'
+  must_contain:
+  - qSOFA
+- id: s12
+  question: How quickly must antibiotics be administered after a positive sepsis screen?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+  must_contain:
+  - 60 minutes
+- id: s13
+  question: Lactate is 4.5 mmol/L — what does the first-hour bundle require?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+  must_contain:
+  - 30 mL/kg
+- id: s14
+  question: There is no resident senior doctor on my ward — who reviews a positive screen?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '3'
+  must_contain:
+  - on-call medical registrar
+- id: g01
+  question: What is the capillary glucose target range for most general inpatients?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '2'
+  must_contain:
+  - '7.8'
+- id: g02
+  question: How often should blood glucose be checked in insulin-treated ward patients?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '3'
+  must_contain:
+  - four
+- id: g03
+  question: What is the rule of 15 for treating hypoglycemia?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '4'
+  must_contain:
+  - 15 g
+- id: g04
+  question: How soon after treating hypoglycemia should glucose be rechecked?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '4'
+  must_contain:
+  - 15 minutes
+- id: g05
+  question: How is hypoglycemia treated in a drowsy patient who cannot swallow?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '4'
+  must_contain:
+  - glucagon
+- id: g06
+  question: What glucose value defines inpatient hypoglycemia?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '4'
+  must_contain:
+  - '4.0'
+- id: g07
+  question: Who is contacted for two or more hypoglycemia episodes in 24 hours out of hours?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '5'
+  must_contain:
+  - on-call medical registrar
+- id: g08
+  question: At what glucose level should ketones be checked?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '3'
+  must_contain:
+  - '14'
+- id: g09
+  question: Is metformin taken on the morning of surgery?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '6'
+  must_contain:
+  - omit
+- id: g10
+  question: What is the relaxed glucose target for frail or end-of-life patients?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '2'
+  must_contain:
+  - '13.9'
+- id: g11
+  question: Where must every hypoglycemia episode be recorded?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '4'
+  must_contain:
+  - hypoglycemia chart
+- id: g12
+  question: When is an insulin infusion considered on the general ward?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '5'
+  must_contain:
+  - infusion
+- id: g13
+  question: What happens to SGLT2 inhibitor tablets around the day of surgery?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '6'
+  must_contain:
+  - 3 days
+- id: g14
+  question: How often is glucose checked once an insulin infusion is stable?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '3'
+  must_contain:
+  - 1–2 hourly
+- id: r01
+  question: What is our protocol for paediatric warfarin bridging?
+  refusal: true
+- id: r02
+  question: How should we manage a direct oral anticoagulant before surgery?
+  refusal: true
+- id: r03
+  question: What is our COVID-19 treatment protocol?
+  refusal: true
+- id: r04
+  question: What are the MRI safety screening requirements?
+  refusal: true
+- id: r05
+  question: What is our gentamicin dosing protocol for dialysis patients?
+  refusal: true
+- id: r06
+  question: How do we manage contrast allergy prophylaxis before a CT scan?
+  refusal: true
+- id: r07
+  question: What is the home insulin pump troubleshooting pathway?
+  refusal: true
+- id: r08
+  question: What are the paediatric sepsis weight bands?
+  refusal: true
+- id: r09
+  question: How should apixaban be resumed after surgery?
+  refusal: true
+- id: r10
+  question: What are the blood transfusion thresholds in ICU?
+  refusal: true
+- id: a-tpl1
+  question: What does the peri-operative anticoagulation bridging protocol say about scope?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '1'
+- id: a-tpl2
+  question: Per our guidelines, summarize the current guidance on scope.
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '1'
+- id: a-tpl3
+  question: A colleague asks about scope — what do we tell them to do?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '1'
+- id: a-nav1
+  question: Which section of the peri-operative anticoagulation bridging protocol covers scope?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '1'
+- id: a-kw1
+  question: Our ward is asking about scope and paediatric — what do the peri-operative anticoagulation
+    bridging guidelines say?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '1'
+- id: a-tpl4
+  question: What does the peri-operative anticoagulation bridging protocol say about thromboembolic risk
+    assessment?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '2'
+- id: a-tpl5
+  question: Per our guidelines, summarize the current guidance on thromboembolic risk assessment.
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '2'
+- id: a-tpl6
+  question: A colleague asks about thromboembolic risk assessment — what do we tell them to do?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '2'
+- id: a-nav2
+  question: Which section of the peri-operative anticoagulation bridging protocol covers thromboembolic
+    risk assessment?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '2'
+- id: a-kw2
+  question: Our ward is asking about risk and months — what do the peri-operative anticoagulation bridging
+    guidelines say?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '2'
+- id: a-tpl7
+  question: What does the peri-operative anticoagulation bridging protocol say about pre-operative bridging?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '3'
+- id: a-tpl8
+  question: Per our guidelines, summarize the current guidance on pre-operative bridging.
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '3'
+- id: a-tpl9
+  question: A colleague asks about pre-operative bridging — what do we tell them to do?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '3'
+- id: a-nav3
+  question: Which section of the peri-operative anticoagulation bridging protocol covers pre-operative
+    bridging?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '3'
+- id: a-kw3
+  question: Our ward is asking about interrupt and case — what do the peri-operative anticoagulation bridging
+    guidelines say?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '3'
+- id: a-tpl10
+  question: What does the peri-operative anticoagulation bridging protocol say about day-of-procedure
+    checks?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '4'
+- id: a-tpl11
+  question: Per our guidelines, summarize the current guidance on day-of-procedure checks.
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '4'
+- id: a-tpl12
+  question: A colleague asks about day-of-procedure checks — what do we tell them to do?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '4'
+- id: a-nav4
+  question: Which section of the peri-operative anticoagulation bridging protocol covers day-of-procedure
+    checks?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '4'
+- id: a-kw4
+  question: Our ward is asking about proceeds and confirm — what do the peri-operative anticoagulation
+    bridging guidelines say?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '4'
+- id: a-tpl13
+  question: What does the peri-operative anticoagulation bridging protocol say about post-operative resumption?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '5'
+- id: a-tpl14
+  question: Per our guidelines, summarize the current guidance on post-operative resumption.
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '5'
+- id: a-tpl15
+  question: A colleague asks about post-operative resumption — what do we tell them to do?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '5'
+- id: a-nav5
+  question: Which section of the peri-operative anticoagulation bridging protocol covers post-operative
+    resumption?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '5'
+- id: a-kw5
+  question: Our ward is asking about haemostasis and resumption — what do the peri-operative anticoagulation
+    bridging guidelines say?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '5'
+- id: a-tpl16
+  question: What does the peri-operative anticoagulation bridging protocol say about special situations?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '6'
+- id: a-tpl17
+  question: Per our guidelines, summarize the current guidance on special situations.
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '6'
+- id: a-tpl18
+  question: A colleague asks about special situations — what do we tell them to do?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '6'
+- id: a-nav6
+  question: Which section of the peri-operative anticoagulation bridging protocol covers special situations?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '6'
+- id: a-kw6
+  question: Our ward is asking about vena and special — what do the peri-operative anticoagulation bridging
+    guidelines say?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '6'
+- id: a-tpl19
+  question: What does the peri-operative anticoagulation bridging protocol say about escalation and contacts?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '7'
+- id: a-tpl20
+  question: Per our guidelines, summarize the current guidance on escalation and contacts.
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '7'
+- id: a-tpl21
+  question: A colleague asks about escalation and contacts — what do we tell them to do?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '7'
+- id: a-nav7
+  question: Which section of the peri-operative anticoagulation bridging protocol covers escalation and
+    contacts?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '7'
+- id: a-kw7
+  question: Our ward is asking about uncertainty and stewardship — what do the peri-operative anticoagulation
+    bridging guidelines say?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '7'
+- id: a-tpl22
+  question: What does the peri-operative anticoagulation bridging protocol say about version history?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '8'
+- id: a-tpl23
+  question: Per our guidelines, summarize the current guidance on version history.
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '8'
+- id: a-tpl24
+  question: A colleague asks about version history — what do we tell them to do?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '8'
+- id: a-nav8
+  question: Which section of the peri-operative anticoagulation bridging protocol covers version history?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '8'
+- id: a-kw8
+  question: Our ward is asking about wording and threshold — what do the peri-operative anticoagulation
+    bridging guidelines say?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '8'
+- id: a-ver1
+  question: What changed in the most recent edition of the peri-operative anticoagulation bridging protocol?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '8'
+- id: a-ver2
+  question: When did the current peri-operative anticoagulation bridging protocol take effect, and how
+    do we know it is still active?
+  expected_corpus: ANTICOAG-BRIDGE
+  expected_section: '8'
+- id: s-tpl25
+  question: What does the sepsis screening protocol say about purpose?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '1'
+- id: s-tpl26
+  question: Per our guidelines, summarize the current guidance on purpose.
+  expected_corpus: SEPSIS-SCR
+  expected_section: '1'
+- id: s-tpl27
+  question: A colleague asks about purpose — what do we tell them to do?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '1'
+- id: s-nav9
+  question: Which section of the sepsis screening protocol covers purpose?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '1'
+- id: s-kw9
+  question: Our ward is asking about teams and standardise — what do the sepsis screening guidelines say?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '1'
+- id: s-tpl28
+  question: What does the sepsis screening protocol say about screening criteria?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '2'
+- id: s-tpl29
+  question: Per our guidelines, summarize the current guidance on screening criteria.
+  expected_corpus: SEPSIS-SCR
+  expected_section: '2'
+- id: s-tpl30
+  question: A colleague asks about screening criteria — what do we tell them to do?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '2'
+- id: s-nav10
+  question: Which section of the sepsis screening protocol covers screening criteria?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '2'
+- id: s-kw10
+  question: Our ward is asking about respiratory and rate — what do the sepsis screening guidelines say?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '2'
+- id: s-tpl31
+  question: What does the sepsis screening protocol say about escalation pathway?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '3'
+- id: s-tpl32
+  question: Per our guidelines, summarize the current guidance on escalation pathway.
+  expected_corpus: SEPSIS-SCR
+  expected_section: '3'
+- id: s-tpl33
+  question: A colleague asks about escalation pathway — what do we tell them to do?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '3'
+- id: s-nav11
+  question: Which section of the sepsis screening protocol covers escalation pathway?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '3'
+- id: s-kw11
+  question: Our ward is asking about whether and senior — what do the sepsis screening guidelines say?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '3'
+- id: s-tpl34
+  question: What does the sepsis screening protocol say about first-hour bundle?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+- id: s-tpl35
+  question: Per our guidelines, summarize the current guidance on first-hour bundle.
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+- id: s-tpl36
+  question: A colleague asks about first-hour bundle — what do we tell them to do?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+- id: s-nav12
+  question: Which section of the sepsis screening protocol covers first-hour bundle?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+- id: s-kw12
+  question: Our ward is asking about antibiotics and lactate — what do the sepsis screening guidelines
+    say?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '4'
+- id: s-tpl37
+  question: What does the sepsis screening protocol say about documentation?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '5'
+- id: s-tpl38
+  question: Per our guidelines, summarize the current guidance on documentation.
+  expected_corpus: SEPSIS-SCR
+  expected_section: '5'
+- id: s-tpl39
+  question: A colleague asks about documentation — what do we tell them to do?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '5'
+- id: s-nav13
+  question: Which section of the sepsis screening protocol covers documentation?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '5'
+- id: s-kw13
+  question: Our ward is asking about times and screening — what do the sepsis screening guidelines say?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '5'
+- id: s-tpl40
+  question: What does the sepsis screening protocol say about version history?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '6'
+- id: s-tpl41
+  question: Per our guidelines, summarize the current guidance on version history.
+  expected_corpus: SEPSIS-SCR
+  expected_section: '6'
+- id: s-tpl42
+  question: A colleague asks about version history — what do we tell them to do?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '6'
+- id: s-nav14
+  question: Which section of the sepsis screening protocol covers version history?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '6'
+- id: s-kw14
+  question: Our ward is asking about added and alternative — what do the sepsis screening guidelines say?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '6'
+- id: s-ver3
+  question: What changed in the most recent edition of the sepsis screening protocol?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '6'
+- id: s-ver4
+  question: When did the current sepsis screening protocol take effect, and how do we know it is still
+    active?
+  expected_corpus: SEPSIS-SCR
+  expected_section: '6'
+- id: g-tpl43
+  question: What does the inpatient glycemic control protocol say about scope?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '1'
+- id: g-tpl44
+  question: Per our guidelines, summarize the current guidance on scope.
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '1'
+- id: g-tpl45
+  question: A colleague asks about scope — what do we tell them to do?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '1'
+- id: g-nav15
+  question: Which section of the inpatient glycemic control protocol covers scope?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '1'
+- id: g-kw15
+  question: Our ward is asking about stress and state — what do the inpatient glycemic control guidelines
+    say?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '1'
+- id: g-tpl46
+  question: What does the inpatient glycemic control protocol say about glycemic targets?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '2'
+- id: g-tpl47
+  question: Per our guidelines, summarize the current guidance on glycemic targets.
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '2'
+- id: g-tpl48
+  question: A colleague asks about glycemic targets — what do we tell them to do?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '2'
+- id: g-nav16
+  question: Which section of the inpatient glycemic control protocol covers glycemic targets?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '2'
+- id: g-kw16
+  question: Our ward is asking about tight and stricter — what do the inpatient glycemic control guidelines
+    say?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '2'
+- id: g-tpl49
+  question: What does the inpatient glycemic control protocol say about monitoring?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '3'
+- id: g-tpl50
+  question: Per our guidelines, summarize the current guidance on monitoring.
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '3'
+- id: g-tpl51
+  question: A colleague asks about monitoring — what do we tell them to do?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '3'
+- id: g-nav17
+  question: Which section of the inpatient glycemic control protocol covers monitoring?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '3'
+- id: g-kw17
+  question: Our ward is asking about minimum and meals — what do the inpatient glycemic control guidelines
+    say?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '3'
+- id: g-tpl52
+  question: What does the inpatient glycemic control protocol say about hypoglycemia management?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '4'
+- id: g-tpl53
+  question: Per our guidelines, summarize the current guidance on hypoglycemia management.
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '4'
+- id: g-tpl54
+  question: A colleague asks about hypoglycemia management — what do we tell them to do?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '4'
+- id: g-nav18
+  question: Which section of the inpatient glycemic control protocol covers hypoglycemia management?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '4'
+- id: g-kw18
+  question: Our ward is asking about swallow and give — what do the inpatient glycemic control guidelines
+    say?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '4'
+- id: g-tpl55
+  question: What does the inpatient glycemic control protocol say about escalation and insulin adjustment?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '5'
+- id: g-tpl56
+  question: Per our guidelines, summarize the current guidance on escalation and insulin adjustment.
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '5'
+- id: g-tpl57
+  question: A colleague asks about escalation and insulin adjustment — what do we tell them to do?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '5'
+- id: g-nav19
+  question: Which section of the inpatient glycemic control protocol covers escalation and insulin adjustment?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '5'
+- id: g-kw19
+  question: Our ward is asking about diabetes and type — what do the inpatient glycemic control guidelines
+    say?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '5'
+- id: g-tpl58
+  question: What does the inpatient glycemic control protocol say about peri-operative fasting?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '6'
+- id: g-tpl59
+  question: Per our guidelines, summarize the current guidance on peri-operative fasting.
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '6'
+- id: g-tpl60
+  question: A colleague asks about peri-operative fasting — what do we tell them to do?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '6'
+- id: g-nav20
+  question: Which section of the inpatient glycemic control protocol covers peri-operative fasting?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '6'
+- id: g-kw20
+  question: Our ward is asking about fasting and omit — what do the inpatient glycemic control guidelines
+    say?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '6'
+- id: g-tpl61
+  question: What does the inpatient glycemic control protocol say about version history?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '7'
+- id: g-tpl62
+  question: Per our guidelines, summarize the current guidance on version history.
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '7'
+- id: g-tpl63
+  question: A colleague asks about version history — what do we tell them to do?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '7'
+- id: g-nav21
+  question: Which section of the inpatient glycemic control protocol covers version history?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '7'
+- id: g-kw21
+  question: Our ward is asking about release and original — what do the inpatient glycemic control guidelines
+    say?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '7'
+- id: g-ver5
+  question: What changed in the most recent edition of the inpatient glycemic control protocol?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '7'
+- id: g-ver6
+  question: When did the current inpatient glycemic control protocol take effect, and how do we know it
+    is still active?
+  expected_corpus: GLYCEMIC-CTRL
+  expected_section: '7'
+- id: rt-gen01
+  question: What is the peri-operative management of apixaban?
+  refusal: true
+  trap_tag: doac-scope
+- id: rt-gen02
+  question: How should rivaroxaban be interrupted before surgery?
+  refusal: true
+  trap_tag: doac-scope
+- id: rt-gen03
+  question: Which DOAC needs no interruption for cataract surgery?
+  refusal: true
+  trap_tag: doac-scope
+- id: rt-gen04
+  question: How do we manage dabigatran around a hip replacement?
+  refusal: true
+  trap_tag: doac-scope
+- id: rt-gen05
+  question: What is the pediatric warfarin bridging protocol?
+  refusal: true
+  trap_tag: peds-scope
+- id: rt-gen06
+  question: How should anticoagulation be bridged for emergency surgery?
+  refusal: true
+  trap_tag: emergency-scope
+- id: rt-gen07
+  question: What is the protocol for warfarin reversal in intracranial hemorrhage?
+  refusal: true
+  trap_tag: emergency-reversal
+- id: rt-gen08
+  question: Which P2Y12 inhibitors should be held before surgery, and for how long?
+  refusal: true
+  trap_tag: antiplatelet
+- id: rt-gen09
+  question: How long should clopidogrel be stopped before a colonoscopy?
+  refusal: true
+  trap_tag: antiplatelet
+- id: rt-gen10
+  question: What is the bridging plan for a patient with antiphospholipid syndrome?
+  refusal: true
+  trap_tag: aps
+- id: rt-gen11
+  question: How is heparin-induced thrombocytopenia managed peri-operatively?
+  refusal: true
+  trap_tag: hit
+- id: rt-gen12
+  question: What is the unfractionated heparin infusion nomogram?
+  refusal: true
+  trap_tag: ufh
+- id: rt-gen13
+  question: Do I need to dose-adjust low molecular weight heparin in renal impairment?
+  refusal: true
+  trap_tag: lmwh-renal
+- id: rt-gen14
+  question: Can a patient on warfarin self-test their INR at home before surgery?
+  refusal: true
+  trap_tag: inr-home
+- id: rt-gen15
+  question: Does warfarin interact with cranberry juice or amiodarone?
+  refusal: true
+  trap_tag: interactions
+- id: rt-gen16
+  question: Is pharmacogenomic testing recommended before warfarin initiation?
+  refusal: true
+  trap_tag: pgx
+- id: rt-gen17
+  question: How should warfarin be managed during pregnancy?
+  refusal: true
+  trap_tag: pregnancy
+- id: rt-gen18
+  question: What CHA2DS2-VASc score triggers anticoagulation in atrial fibrillation?
+  refusal: true
+  trap_tag: chads
+- id: rt-gen19
+  question: Which antibiotics are first-line for sepsis from a urinary source?
+  refusal: true
+  trap_tag: abx-choice
+- id: rt-gen20
+  question: When should vasopressors be started in septic shock?
+  refusal: true
+  trap_tag: vasopressors
+- id: rt-gen21
+  question: What is the role of procalcitonin in sepsis screening?
+  refusal: true
+  trap_tag: pct
+- id: rt-gen22
+  question: How is sepsis screened in the pediatric ICU?
+  refusal: true
+  trap_tag: peds-scope
+- id: rt-gen23
+  question: What are the sepsis screening criteria for neonates?
+  refusal: true
+  trap_tag: neonatal
+- id: rt-gen24
+  question: When should source control such as drainage be performed in sepsis?
+  refusal: true
+  trap_tag: source-control
+- id: rt-gen25
+  question: Are corticosteroids recommended in refractory septic shock?
+  refusal: true
+  trap_tag: steroids-sepsis
+- id: rt-gen26
+  question: What follow-up is arranged for sepsis survivors after discharge?
+  refusal: true
+  trap_tag: post-sepsis
+- id: rt-gen27
+  question: How often should blood cultures be repeated during ongoing therapy?
+  refusal: true
+  trap_tag: culture-repeat
+- id: rt-gen28
+  question: What is the protocol for neutropenic sepsis on the ward?
+  refusal: true
+  trap_tag: neutropenic
+- id: rt-gen29
+  question: How do we manage diabetic ketoacidosis on the general ward?
+  refusal: true
+  trap_tag: dka-scope
+- id: rt-gen30
+  question: What is the blood glucose target for patients in the ICU?
+  refusal: true
+  trap_tag: icu-scope
+- id: rt-gen31
+  question: How is hyperosmolar hyperglycemic state managed?
+  refusal: true
+  trap_tag: hhs
+- id: rt-gen32
+  question: How should insulin be titrated for outpatient type 2 diabetes?
+  refusal: true
+  trap_tag: outpatient
+- id: rt-gen33
+  question: What are the blood glucose targets for gestational diabetes managed in the community?
+  refusal: true
+  trap_tag: pregnancy-gdm
+- id: rt-gen34
+  question: How is neonatal hypoglycemia treated in the delivery suite?
+  refusal: true
+  trap_tag: neonatal
+- id: rt-gen35
+  question: Should continuous glucose monitors be used for hospital inpatients?
+  refusal: true
+  trap_tag: cgm
+- id: rt-gen36
+  question: How do we manage steroid-induced hyperglycemia?
+  refusal: true
+  trap_tag: steroid-hyperglycemia
+- id: rt-gen37
+  question: What is the metformin dosing schedule in chronic kidney disease?
+  refusal: true
+  trap_tag: metformin-ckd
+- id: rt-gen38
+  question: Should metformin be screened for lactic acidosis risk before admission?
+  refusal: true
+  trap_tag: metformin-la
+- id: rt-gen39
+  question: What is the protocol for managing inpatient insulin pumps?
+  refusal: true
+  trap_tag: pump
+- id: rt-gen40
+  question: What hypoglycemia pathway applies to a post-bariatric surgery patient?
+  refusal: true
+  trap_tag: bariatric
+- id: rt-gen41
+  question: Should sulfonylureas be held on the morning of surgery?
+  refusal: true
+  trap_tag: sulfonylurea
+- id: rt-gen42
+  question: How is hypoglycemia treated in a patient during hemodialysis?
+  refusal: true
+  trap_tag: dialysis
+- id: rt-gen43
+  question: What is the antibiotic prophylaxis regimen for joint replacement surgery?
+  refusal: true
+  trap_tag: surgical-prophylaxis
+- id: rt-gen44
+  question: How should COVID-19 be treated on general wards?
+  refusal: true
+  trap_tag: covid
+- id: rt-gen45
+  question: What is the protocol for MRSA decolonization before admission?
+  refusal: true
+  trap_tag: mrsa

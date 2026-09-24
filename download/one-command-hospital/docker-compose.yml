@@ -1,8 +1,16 @@
 name: one-command-hospital
 
+# ── Network segmentation ─────────────────────────────────────────────────────
+#   hospital : application tier (everything talks here)
+#   data     : database tier — INTERNAL (no outbound internet), only DBs and
+#              their primary consumers join it. Production also removes the
+#              host-port bindings below and fronts everything with TLS.
 networks:
   hospital:
     driver: bridge
+  data:
+    driver: bridge
+    internal: true
 
 volumes:
   openemr-db-data:
@@ -10,24 +18,49 @@ volumes:
   openhim-mongo-data:
   hapi-db-data:
   models-cache:
+  audit-data:            # hash-chained audit trail (ai-mediator)
+  prom-data:
+  grafana-data:
+
+x-ai-hardening: &ai-hardening
+  restart: unless-stopped
+  # No privilege escalation, no capabilities, read-only rootfs: these services
+  # only read corpus/manifests and answer questions — nothing to write.
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
+  read_only: true
+  tmpfs: ["/tmp:size=64m,mode=1777"]
+  deploy:
+    resources:
+      limits:
+        cpus: "2.0"
+        memory: 2g
 
 services:
   # ─────────────────── EHR sandbox (system of record) ───────────────────
   openemr-db:
     image: mariadb:10.11
     restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
     environment:
       MYSQL_ROOT_PASSWORD: ${OPENEMR_DB_ROOT_PASS}
       MYSQL_DATABASE: openemr
       MYSQL_USER: openemr
       MYSQL_PASSWORD: ${OPENEMR_DB_PASS}
     volumes: [openemr-db-data:/var/lib/mysql]
-    networks: [hospital]
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
 
   openemr:
     image: openemr/openemr:7.0.2
     restart: unless-stopped
-    depends_on: [openemr-db]
+    depends_on:
+      openemr-db:
+        condition: service_healthy
     ports: ["8300:80"]
     environment:
       MYSQL_HOST: openemr-db
@@ -39,28 +72,45 @@ services:
       OE_USER: ${OPENEMR_ADMIN_USER}
       OE_PASS: ${OPENEMR_ADMIN_PASS}
       # FHIR R4 endpoint: /apis/default/fhir (enabled by default; configure in UI)
-    networks: [hospital]
+    networks: [hospital, data]
 
   # ─────────────────── FHIR spine (our AI app lives here) ───────────────────
   medplum-db:
     image: postgres:16
     restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
     environment:
       POSTGRES_DB: medplum
       POSTGRES_USER: medplum
       POSTGRES_PASSWORD: ${MEDPLUM_DB_PASS}
     volumes: [medplum-db-data:/var/lib/postgresql/data]
-    networks: [hospital]
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medplum"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   medplum-redis:
     image: redis:7-alpine
     restart: unless-stopped
-    networks: [hospital]
+    security_opt: ["no-new-privileges:true"]
+    command: ["redis-server", "--appendonly", "yes"]
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   medplum:
     image: ghcr.io/medplum/medplum-server:latest
     restart: unless-stopped
-    depends_on: [medplum-db, medplum-redis]
+    depends_on:
+      medplum-db:
+        condition: service_healthy
+      medplum-redis:
+        condition: service_healthy
     ports: ["8080:8080"]
     environment:
       MEDPLUM_PORT: "8080"
@@ -71,26 +121,34 @@ services:
       POSTGRES_USERNAME: medplum
       POSTGRES_PASSWORD: ${MEDPLUM_DB_PASS}
       REDIS_HOST: medplum-redis
-    networks: [hospital]
+    networks: [hospital, data]
 
   # ─────────────────── Interop bus ───────────────────
   openhim-mongo:
     image: mongo:6
     restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
     volumes: [openhim-mongo-data:/data/db]
-    networks: [hospital]
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
 
   openhim-core:
     image: jembi/openhim-core-js:latest
     restart: unless-stopped
-    depends_on: [openhim-mongo]
+    depends_on:
+      openhim-mongo:
+        condition: service_healthy
     ports:
       - "5000:5000"    # HTTP transactions (mediator route)
       - "5001:5001"    # HTTPS transactions
       - "8085:8080"    # core API (remapped: 8080 belongs to Medplum on the host)
     environment:
       MONGO_URL: mongodb://openhim-mongo:27017/openhim
-    networks: [hospital]
+    networks: [hospital, data]
 
   # NOTE: the console ships with a static config that may default to core API on
   # :8080 — after first boot, point it at localhost:8085 (see docs/architecture.md §ops).
@@ -103,14 +161,24 @@ services:
 
   # ─────────────────── Our AI services ───────────────────
   deid-gate:
+    <<: *ai-hardening
     build: services/deid-gate
-    restart: unless-stopped
     ports: ["8100:8000"]
+    environment:
+      MAX_TEXT_CHARS: "50000"
+      RATE_LIMIT_RPS: "20"
+      RATE_LIMIT_BURST: "40"
     networks: [hospital]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
   guideline-rag:
+    <<: *ai-hardening
     build: services/guideline-rag
-    restart: unless-stopped
     ports: ["8101:8000"]
     volumes:
       - ./guidelines:/app/guidelines:ro
@@ -118,25 +186,56 @@ services:
       LLM_BASE_URL: ${LLM_BASE_URL:-http://llm:8000/v1}
       LLM_MODEL: ${LLM_MODEL:-BioMistral/BioMistral-7B}
       RETRIEVAL_THRESHOLD: "0.18"
+      RETRIEVAL_MARGIN: "0.02"
+      CACHE_TTL_S: "300"
     networks: [hospital]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
   verifier:
+    <<: *ai-hardening
     build: services/verifier
-    restart: unless-stopped
     ports: ["8102:8000"]
     networks: [hospital]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
   ai-mediator:
+    <<: *ai-hardening
     build: services/ai-mediator
-    restart: unless-stopped
+    depends_on:
+      deid-gate:
+        condition: service_healthy
+      guideline-rag:
+        condition: service_healthy
+      verifier:
+        condition: service_healthy
     ports: ["8103:3000"]
+    volumes:
+      - audit-data:/app/audit
     environment:
       DEID_URL: http://deid-gate:8000/deid
       RAG_URL: http://guideline-rag:8000/answer
       MEDPLUM_FHIR_URL: http://medplum:8080/fhir
       MEDPLUM_AUTH_JSON: ${MEDPLUM_AUTH_JSON:-}
       OPENHIM_CORE_URL: https://openhim-core:8080
+      RATE_LIMIT_RPS: "20"
+      RATE_LIMIT_BURST: "40"
     networks: [hospital]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # ─────────────────── LLM (profile: gpu) ───────────────────
   llm:
@@ -151,8 +250,14 @@ services:
       --model ${LLM_MODEL:-BioMistral/BioMistral-7B}
       --max-model-len 8192
       --gpu-memory-utilization 0.90
+      --enable-prefix-caching
+      --temperature 0.1
+    # Quantization option for 16GB cards (check license compatibility first):
+    #   --quantization awq / gptq with a quantized BioMistral build.
     deploy:
       resources:
+        limits:
+          memory: 28g
         reservations:
           devices:
             - driver: nvidia
@@ -164,17 +269,25 @@ services:
   hapi-db:
     profiles: ["conformance"]
     image: postgres:16
+    security_opt: ["no-new-privileges:true"]
     environment:
       POSTGRES_DB: hapi
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: ${HAPI_DB_PASS}
     volumes: [hapi-db-data:/var/lib/postgresql/data]
-    networks: [hospital]
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d hapi"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   hapi-fhir:
     profiles: ["conformance"]
     image: hapiproject/hapi:latest
-    depends_on: [hapi-db]
+    depends_on:
+      hapi-db:
+        condition: service_healthy
     ports: ["8105:8080"]
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://hapi-db:5432/hapi
@@ -182,7 +295,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${HAPI_DB_PASS}
       SPRING_DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
       HAPI_FHIR_FHIR_VERSION: R4
-    networks: [hospital]
+    networks: [hospital, data]
 
   # ─────────────────── Synthetic patients (profile: patients) ───────────────────
   synthea:
@@ -191,4 +304,34 @@ services:
     volumes:
       - ./data/synthea:/work/output
     command: ["-p", "${SYNTHEA_POPULATION:-100}"]
+    networks: [hospital]
+
+  # ─────────────────── Observability (profile: observe) ───────────────────
+  # make observe  →  Prometheus :8106/metrics  ·  Grafana :8107 (admin/admin in sandbox)
+  prometheus:
+    profiles: ["observe"]
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports: ["8106:9090"]
+    volumes:
+      - ./observe/prometheus:/etc/prometheus:ro
+      - prom-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    networks: [hospital]
+
+  grafana:
+    profiles: ["observe"]
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    depends_on: [prometheus]
+    ports: ["8107:3000"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./observe/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observe/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
     networks: [hospital]

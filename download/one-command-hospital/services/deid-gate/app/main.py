@@ -1,8 +1,12 @@
-"""De-identification gate — the PHI white-out pen.
+"""De-identification gate — the PHI white-out pen (v0.2).
 
 Every byte of clinical text passes here BEFORE it may touch an LLM.
 Improvement context: safety architecture, not a feature. The model never
 sees identifiers, so there is nothing to leak.
+
+v0.2 hardening: /metrics with entity findings counter, per-IP rate limit,
+body-size cap, security headers. Fail-safe posture unchanged: over-redact
+rather than under-redact.
 """
 import os
 from typing import List
@@ -14,7 +18,15 @@ from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
 from presidio_anonymizer.entities import OperatorConfig
 
-app = FastAPI(title="deid-gate", version="0.1.0")
+from .hardening import Counter, Histogram, install
+
+app = FastAPI(title="deid-gate", version="0.2.0")
+
+FINDINGS = Counter("deid_findings_total", "Entities redacted, by type.")
+TEXT_LEN = Histogram("deid_text_len_chars", "Scrubbed text length in chars.",
+                     buckets=[100, 500, 1000, 2500, 5000, 10000, 25000, 50000])
+install(app, "deid-gate", extra=[FINDINGS, TEXT_LEN])
+
 analyzer: AnalyzerEngine | None = None
 anonymizer = AnonymizerEngine()
 
@@ -46,10 +58,16 @@ class DeidResponse(BaseModel):
     finding_count: int
 
 
+MAX_TEXT_CHARS = int(os.environ.get("MAX_TEXT_CHARS", "50000"))
+
+
 @app.post("/deid", response_model=DeidResponse)
 def deid(req: DeidRequest):
     if analyzer is None:
         raise HTTPException(status_code=503, detail="analyzer not loaded")
+    if len(req.text) > MAX_TEXT_CHARS:
+        raise HTTPException(status_code=413,
+                            detail=f"text exceeds {MAX_TEXT_CHARS} chars")
     results = analyzer.analyze(
         text=req.text, language=req.language,
         entities=ENTITY_TYPES, score_threshold=0.35,
@@ -61,9 +79,12 @@ def deid(req: DeidRequest):
          "score": round(r.score, 3)}
         for r in results
     ]
+    FINDINGS.inc({"route": "/deid"}, len(findings))
+    TEXT_LEN.observe({"route": "/deid"}, len(req.text))
     return DeidResponse(anonymized=out.text, findings=findings, finding_count=len(findings))
 
 
 @app.get("/health")
 def health():
-    return {"ok": analyzer is not None, "service": "deid-gate"}
+    return {"ok": analyzer is not None, "service": "deid-gate",
+            "max_text_chars": MAX_TEXT_CHARS}

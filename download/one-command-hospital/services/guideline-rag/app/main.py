@@ -1,19 +1,28 @@
-"""Guideline RAG — the librarian robot (v0.2).
+"""Guideline RAG — the librarian robot (v0.3).
 
 Improvement #1 (citation-forced RAG + hard refusal) and #2 (edition stamping),
-Phase 1: hybrid retrieval (BM25 + optional SBERT) and title-boosted chunks.
+Phase 1: hybrid retrieval (BM25 + optional SBERT), title-boosted chunks.
+v0.3 hardening: TTL answer cache, ambiguity margin gate, /metrics, rate limit.
 
 Rules the generator lives by:
   - Answer ONLY from the provided excerpts.
   - Every factual sentence must cite its source as [CORPUS_ID §N].
   - If the excerpts don't cover the question: reply exactly `NOT_COVERED`.
+  - If retrieval is not confident enough (below THRESHOLD, or top-2 within
+    MARGIN of each other): refuse — a wrong guess is worse than a refusal.
 If the LLM is unreachable, fall back to extractive answering (top section
 verbatim) so retrieval can still be evaluated without a GPU.
+
+NOTE for callers: de-id the QUESTION as well as any note context before this
+service if the question may contain patient identifiers — the mediator does
+this upstream; direct callers must not bypass that gate.
 """
+import hashlib
 import os
 import re
 import time
 import pathlib
+from collections import OrderedDict
 from typing import List, Optional
 
 import requests
@@ -22,17 +31,47 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from .retrieval import HybridRetriever
+from .hardening import Counter, Gauge, Histogram, install
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 GUIDELINES = ROOT / "guidelines"
 THRESHOLD = float(os.environ.get("RETRIEVAL_THRESHOLD", "0.18"))
+MARGIN = float(os.environ.get("RETRIEVAL_MARGIN", "0.02"))
 LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "http://llm:8000/v1")
 LLM_MODEL = os.environ.get("LLM_MODEL", "BioMistral/BioMistral-7B")
+CACHE_TTL_S = float(os.environ.get("CACHE_TTL_S", "300"))
+CACHE_MAX = int(os.environ.get("CACHE_MAX", "1024"))
 
-app = FastAPI(title="guideline-rag", version="0.2.0")
+app = FastAPI(title="guideline-rag", version="0.3.0")
+
+REFUSALS = Counter("rag_refusals_total", "Refusals returned, by reason.")
+CACHE_HITS = Counter("rag_cache_hits_total", "Answers served from the TTL cache.")
+TOP_SCORE = Gauge("rag_top_score_last", "Retrieval score of the last query's top hit.")
+RETRIEVAL_GAP = Gauge("rag_margin_last", "Score gap between top-1 and top-2 of the last query.")
+install(app, "guideline-rag", extra=[REFUSALS, CACHE_HITS, TOP_SCORE, RETRIEVAL_GAP])
 
 manifest: dict = {}
 retriever: HybridRetriever | None = None
+_cache: OrderedDict = OrderedDict()  # key -> (expires_at, answer_dict)
+
+
+def _cache_get(key):
+    hit = _cache.get(key)
+    if not hit:
+        return None
+    expires, value = hit
+    if expires < time.time():
+        _cache.pop(key, None)
+        return None
+    _cache.move_to_end(key)
+    return value
+
+
+def _cache_put(key, value):
+    _cache[key] = (time.time() + CACHE_TTL_S, value)
+    _cache.move_to_end(key)
+    while len(_cache) > CACHE_MAX:
+        _cache.popitem(last=False)
 
 
 def _load_corpus():
@@ -111,13 +150,31 @@ def call_llm(prompt: str) -> str:
     return r.json()["choices"][0]["message"]["content"].strip()
 
 
+def _refusal(reason: str, latency_ms: int, retrieval_meta: dict) -> Answer:
+    REFUSALS.inc({"reason": reason})
+    return Answer(answer="NOT_COVERED", citations=[], refusal=True,
+                  refusal_reason=reason, latency_ms=latency_ms, model=LLM_MODEL,
+                  retrieval=retrieval_meta)
+
+
 @app.post("/answer", response_model=Answer)
 def answer(q: Question):
     t0 = time.time()
     SECTIONS = retriever.sections
+
+    key = hashlib.sha256(
+        f"{q.question.strip().lower()}|{retriever.engine}|{THRESHOLD}|{MARGIN}".encode()
+    ).hexdigest()
+    cached = _cache_get(key)
+    if cached is not None:
+        CACHE_HITS.inc({"route": "/answer"})
+        return Answer(**{**cached, "latency_ms": int((time.time() - t0) * 1000)})
+
     results = retriever.search(q.question, k=3)
-    hits = [{**SECTIONS[r["index"]], "score": r["score"]}
-            for r in results if r["score"] >= THRESHOLD]
+    top_score = results[0]["score"] if results else 0.0
+    gap = (results[0]["score"] - results[1]["score"]) if len(results) >= 2 else 1.0
+    TOP_SCORE.set({"route": "/answer"}, round(top_score, 4))
+    RETRIEVAL_GAP.set({"route": "/answer"}, round(gap, 4))
 
     retrieval_meta = {"engine": retriever.engine,
                       "top": [{"corpus_id": SECTIONS[r["index"]]["corpus_id"],
@@ -125,11 +182,17 @@ def answer(q: Question):
                                "score": round(r["score"], 3)}
                               for r in results]}
 
+    # Gate 1 — confidence: nothing scored above the floor → refuse, don't guess.
+    hits = [{**SECTIONS[r["index"]], "score": r["score"]}
+            for r in results if r["score"] >= THRESHOLD]
     if not hits:
-        return Answer(answer="NOT_COVERED", citations=[], refusal=True,
-                      refusal_reason="no guideline section met retrieval confidence",
-                      latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL,
-                      retrieval=retrieval_meta)
+        return _refusal("no guideline section met retrieval confidence",
+                        int((time.time() - t0) * 1000), retrieval_meta)
+
+    # Gate 2 — ambiguity: top-2 nearly tied → refuse (MARGIN=0 disables).
+    if MARGIN > 0 and len(results) >= 2 and gap < MARGIN:
+        return _refusal("top sections too close to disambiguate safely",
+                        int((time.time() - t0) * 1000), retrieval_meta)
 
     prompt = build_prompt(q.question, hits)
     try:
@@ -139,24 +202,24 @@ def answer(q: Question):
         raw = hits[0]["text"].split("\n", 1)[-1].strip()[:800]
 
     if "NOT_COVERED" in raw.upper():
-        return Answer(answer="NOT_COVERED", citations=[], refusal=True,
-                      refusal_reason="generator judged the corpus does not cover this",
-                      latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL,
-                      retrieval=retrieval_meta)
+        return _refusal("generator judged the corpus does not cover this",
+                        int((time.time() - t0) * 1000), retrieval_meta)
 
     # Improvement #2: stamp every citation with the manifest edition + title.
     cites, seen = [], set()
     for cid, sec in re.findall(r"\[([A-Z][A-Z0-9-]+)\s*§(\d+)\]", raw):
-        key = (cid, sec)
-        if key in seen or cid not in manifest:
+        key_pair = (cid, sec)
+        if key_pair in seen or cid not in manifest:
             continue
-        seen.add(key)
+        seen.add(key_pair)
         e = manifest[cid]
         cites.append(Citation(corpus_id=cid, section=sec, edition=e["edition"], title=e["title"]))
 
-    return Answer(answer=raw, citations=cites, refusal=False,
-                  latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL,
-                  retrieval=retrieval_meta)
+    result = Answer(answer=raw, citations=cites, refusal=False,
+                    latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL,
+                    retrieval=retrieval_meta)
+    _cache_put(key, result.model_dump())
+    return result
 
 
 @app.get("/health")
@@ -164,4 +227,6 @@ def health():
     return {"ok": bool(retriever and retriever.sections),
             "sections": len(retriever.sections) if retriever else 0,
             "retrieval_engine": retriever.engine if retriever else "unloaded",
+            "cache_entries": len(_cache),
+            "gates": {"threshold": THRESHOLD, "margin": MARGIN},
             "corpus": {k: v["edition"] for k, v in manifest.items()}}

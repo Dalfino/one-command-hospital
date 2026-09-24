@@ -49,8 +49,8 @@ export type StatChip = {
 };
 
 export const HERO_CHIPS: StatChip[] = [
-  { icon: SearchCheck, value: "98%", label: "retrieval on the eval", duration: 9, delay: 0, offset: "lg:mr-16" },
-  { icon: GraduationCap, value: "52", label: "question exam in CI", duration: 12, delay: 0.8, offset: "lg:mr-0" },
+  { icon: SearchCheck, value: "95%", label: "retrieval on the 208-question eval", duration: 9, delay: 0, offset: "lg:mr-16" },
+  { icon: GraduationCap, value: "208", label: "question exam in CI", duration: 12, delay: 0.8, offset: "lg:mr-0" },
   { icon: Lock, value: "0", label: "PHI to the AI", duration: 10, delay: 1.6, offset: "lg:mr-24" },
 ];
 
@@ -204,7 +204,7 @@ export const IMPROVEMENTS: Improvement[] = [
     name: "Known-answer eval in CI",
     icon: ClipboardCheck,
     upstream: "Synthea covers fake patients; nobody grades a guideline knowledge base end-to-end.",
-    ours: "52 pairs — 42 traced to corpus + section, 10 refusal traps — scored for retrieval, citation validity, and refusal correctness. Under 80% retrieval, the build fails.",
+    ours: "208 questions — 153 traced to corpus + section, 55 refusal traps — scored for retrieval, citation validity, and refusal correctness. Seed set holds 98%; full set holds 95%. Under 80%, the build fails.",
     verify: "make eval → eval/report.md · runs offline, no GPU needed",
   },
   {
@@ -314,9 +314,9 @@ export type ProofMetric = {
 };
 
 export const PROOF_METRICS: ProofMetric[] = [
-  { to: 52, suffix: "", label: "questions in the exam", sub: "42 traced + 10 refusal traps; target 200 by Phase 1 exit" },
-  { to: 98, suffix: "%", label: "retrieval hit rate", sub: "41 of 42 traced items, BM25-only mode" },
-  { to: 10, suffix: "", label: "refusal traps", sub: "out-of-scope questions must return NOT_COVERED" },
+  { to: 208, suffix: "", label: "questions in the exam", sub: "153 traced + 55 refusal traps; hand-written seed kept verbatim" },
+  { to: 95, suffix: "%", label: "retrieval on the full exam", sub: "146 of 153 traced items; seed set holds 98%" },
+  { to: 55, suffix: "", label: "refusal traps", sub: "out-of-scope questions must return NOT_COVERED" },
   { to: 80, suffix: "%", label: "CI floor", sub: "retrieval below this fails the build" },
 ];
 
@@ -586,9 +586,10 @@ export const PHASES: Phase[] = [
       { text: "Medplum Bot JWT auth — replaces v0 naive auth", done: true },
       { text: "medspaCy ConText verifier — polarity/negation v0.2 shipped", done: true },
       { text: "Hybrid retrieval — BM25 + optional SBERT channel", done: true },
-      { text: "Eval set grows 52 → 200 pairs", done: false },
+      { text: "Eval set grows 52 → 208 questions (95% full / 98% seed)", done: true },
+      { text: "Hardening wave: audit chain, observability, CI, readiness gate", done: true },
     ],
-    gate: "Gate: ≥85% grounded on the 200-question eval",
+    gate: "Gate: ≥85% grounded in live mode (needs GPU run) ⬜",
   },
   {
     phase: "Phase 2",

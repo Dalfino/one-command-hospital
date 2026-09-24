@@ -3,10 +3,12 @@
 A clinician asks a protocol question **inside the EHR** and gets a cited answer from the
 hospital's own guidelines — or an honest refusal. Zero PHI reaches the AI. One GPU. One command.
 
-> **Status: Phase 1 — core items landed.** SMART widget (build green), Medplum Bot JWT
-> auth, ConText verifier, hybrid retrieval (BM25 + optional SBERT), 3-protocol corpus,
-> 52-question eval at **98% retrieval**. Compose stack, service contracts and eval harness
-> are real; Docker images are built at first `make up`.
+> **Status: Phase 1 complete — hardening wave landed (M7–M11).** SMART widget,
+> Medplum Bot JWT auth, ConText verifier, hybrid retrieval, 3-protocol corpus.
+> Eval: **208 questions** — 98% retrieval on the 52-question seed, **95% on the full
+> 208-question set** (CI gate: ≥80%). Security: container hardening, rate limits,
+> hash-chained audit trail. Governance: model card, readiness gates, incident
+> runbook. **NOT cleared for clinical deployment — see docs/deployment_readiness.md.**
 
 ## The 60-second version
 
@@ -105,9 +107,11 @@ docs/              architecture.md, improvements.md
 ## Roadmap
 
 1. **Phase 0 (done):** stack up, eval harness green, synthetic hospital populated.
-2. **Phase 1 (in progress):** SMART widget ✅ · Bot JWT auth ✅ · ConText verifier ✅ ·
-   hybrid retrieval ✅ · eval 52 → 200 · vector index on by default · OpenHIM registration.
-3. **Phase 2:** Orthanc + OHIF imaging layer, MedGemma pre-read (Recipe B).
+2. **Phase 1 (complete):** SMART widget ✅ · Bot JWT auth ✅ · ConText verifier ✅ ·
+   hybrid retrieval ✅ · eval 208 questions ✅ · hardening wave M7–M11 ✅ ·
+   OpenHIM registration ⬜ · live-mode trap-refusal gate ⬜.
+3. **Phase 2:** real hospital protocols + steward sign-off, live-mode eval, TLS +
+   pen test, Orthanc + OHIF imaging layer, MedGemma pre-read (Recipe B).
 4. **Phase 3:** MIMIC-code validation pathway, federated testbed, device layer.
 
 ## Milestones
@@ -121,6 +125,11 @@ docs/              architecture.md, improvements.md
 | M4 | `406d6d8` | Hybrid retrieval (BM25 + optional SBERT), title-boosted chunks |
 | M5 | `2c05ca2` | 3 protocols, 52-question eval, **98% retrieval** (CI gate 80%) |
 | M6 | portal | Program website (Next.js) with the full flagship story |
+| M7 | hardening | Compose segmentation (internal data net), non-root + cap-drop + read-only AI services, healthchecks, resource limits, `.env.example` |
+| M8 | governance | Hash-chained audit trail + `/audit/verify`; question de-ID fix; model card, governance charter, security checklist, **deployment readiness gate** |
+| M9 | observability | `make observe` — Prometheus + 7 alert rules (refusal fatigue, ungrounded, audit-chain) + Grafana dashboard |
+| M10 | accuracy | Eval 52 → **208** (seed 98%, full **95%**), ambiguity-margin gate, trap sanity probe |
+| M11 | ops | `make doctor` preflight, CI workflow (eval gates + secret scan), TTL answer cache, vLLM prefix caching, Dockerfile fixes |
 
 ## Licensing note
 
