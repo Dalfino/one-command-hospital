@@ -17,6 +17,7 @@ volumes:
   medplum-db-data:
   openhim-mongo-data:
   hapi-db-data:
+  rag-vector-data:      # pgvector embeddings for guideline retrieval (ADOPT)
   models-cache:
   audit-data:            # hash-chained audit trail (ai-mediator)
   prom-data:
@@ -161,6 +162,33 @@ services:
     ports: ["9000:80"]
     networks: [hospital]
 
+  # ─────────────── Vector store (ADOPT — docs/tech_radar.md) ───────────────
+  # Retrieval vectors run in Postgres (pgvector) INSIDE the existing data tier
+  # instead of a new stateful service: one less thing to secure, back up and
+  # patch; same ANN behaviour at hospital-corpus scale (<100k chunks). A
+  # dedicated vector DB becomes rational only past ~1M chunks / multi-tenant.
+  # DORMANT by design: guideline-rag stays BM25(-hybrid, in-process SBERT)
+  # until the GPU pilot sets VECTOR_BACKEND=sbert + VECTOR_DB_URL; the schema
+  # is created on first boot from deploy/pgvector/init/. Nothing writes or
+  # reads it before then.
+  rag-vector-db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      POSTGRES_DB: ragvecs
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: ${RAG_VECTOR_DB_PASS}
+    volumes:
+      - rag-vector-data:/var/lib/postgresql/data
+      - ./deploy/pgvector/init:/docker-entrypoint-initdb.d:ro
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag -d ragvecs"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   # ─────────────────── Our AI services ───────────────────
   deid-gate:
     <<: *ai-hardening
@@ -190,7 +218,14 @@ services:
       RETRIEVAL_THRESHOLD: "0.18"
       RETRIEVAL_MARGIN: "0.02"
       CACHE_TTL_S: "300"
-    networks: [hospital]
+      # Guided decoding (ADOPT): decoding-level answer contract via vLLM.
+      # Legacy free-text servers degrade gracefully — see deploy/vllm/README.md.
+      GUIDED_DECODING: "1"
+      # pgvector wiring (ADOPT, dormant): flip VECTOR_BACKEND=sbert and set
+      # VECTOR_DB_URL to activate the vector channel (GPU pilot work).
+      VECTOR_BACKEND: ${VECTOR_BACKEND:-bm25}
+      VECTOR_DB_URL: ${VECTOR_DB_URL:-}
+    networks: [hospital, data]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
       interval: 15s

@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "covered",
+    "answer",
+    "citations"
+  ],
+  "properties": {
+    "covered": {
+      "type": "boolean",
+      "description": "false = the excerpts do not answer the question"
+    },
+    "answer": {
+      "type": "string",
+      "description": "Guideline answer; every claim cited inline as [CORPUS_ID \u00a7N]. When covered=false this is exactly NOT_COVERED."
+    },
+    "citations": {
+      "type": "array",
+      "description": "Every citation used in `answer`, as structured pairs.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "corpus_id",
+          "section"
+        ],
+        "properties": {
+          "corpus_id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9-]+$"
+          },
+          "section": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

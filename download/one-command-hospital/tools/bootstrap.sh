@@ -37,6 +37,9 @@ if [ ! -f .env ]; then
     echo "OPENEMR_ADMIN_PASS=$(openssl rand -hex 12)"
     echo "MEDPLUM_DB_PASS=$(openssl rand -hex 16)"
     echo "MEDPLUM_AUTH_JSON="   # production: {"clientId":...,"clientSecret":...}
+    echo "RAG_VECTOR_DB_PASS=$(openssl rand -hex 16)"  # pgvector (dormant until VECTOR_BACKEND=sbert)
+    echo "VECTOR_BACKEND=bm25"
+    echo "VECTOR_DB_URL="
     echo "HAPI_DB_PASS=$(openssl rand -hex 16)"
     echo "GRAFANA_ADMIN_PASSWORD=$(openssl rand -hex 12)"
     echo "SYNTHEA_POPULATION=100"

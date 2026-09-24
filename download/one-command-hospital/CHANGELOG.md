@@ -5,6 +5,72 @@ Format: [Keep a Changelog](https://keepachangelog.com/); versions: SemVer.
 This is a research project — **nothing here is cleared for clinical
 deployment** (see `docs/deployment_readiness.md` for the gate matrix).
 
+## [0.6.1] — Tech-radar ADOPT wave (M24)
+
+All three ADOPT verdicts from `docs/tech_radar.md` implemented, no GPU needed.
+
+### Added
+- **Guided / constrained decoding** — `services/guideline-rag/app/guided_decoding.py`:
+  the answer contract (`covered` / `answer` / `citations`, citations as typed
+  `{corpus_id, section}` pairs) is enforced at the vLLM decoding level via the
+  `guided_json` request field instead of trusting the prompt. Prompt mirrors
+  the schema when the constraint is on; `parse_guided()` is strict
+  (fail-open-to-legacy for free text, fail-closed refusal for unparseable
+  "structured" output); `covered:false` is a mechanical refusal.
+  Canonical schema mirrored at `deploy/vllm/guided_answer_schema.json`
+  (unit test enforces zero drift); behavior table + vLLM version notes in
+  `deploy/vllm/README.md`. Env: `GUIDED_DECODING` (default on),
+  `GUIDED_JSON_FIELD` (default `guided_json`).
+- **CDS Hooks `patient-view` facade** — the copilot surfaces INSIDE any
+  CDS-Hooks-capable EHR chart. `services/ai-mediator/cdshooks.js` (pure,
+  node-tested) + routes on the mediator: `GET /cds-services` discovery,
+  `POST /cds-services/guideline-copilot-patient-view`. Up to 3 questions
+  derived from active conditions/medications (prefetch preferred, direct
+  FHIR read otherwise, **fail-closed 502** when no context is obtainable).
+  Every question rides the same pipeline as `/process` — the `/process`
+  handler was refactored into `runPipeline()` so both surfaces share one
+  de-id path, one verifier contract, one audit trail, one review queue
+  (per-surface metrics labels). Cards: grounded answers = info cards with
+  sources; ungrounded = warning cards linking `/review`; refusals = no
+  card; all-empty = exactly one deterministic coverage card. Patient
+  context is transient input and never reaches cards/logs/audit.
+  OpenAPI paths added; integration tier covers discovery, prefetch cards,
+  coverage card, validation, audit-chain integrity, fail-closed.
+- **pgvector in the compose data tier (dormant)** — `rag-vector-db`
+  (`pgvector/pgvector:pg16`) on the internal `data` network with
+  `rag-vector-data` volume; schema auto-created on first boot
+  (`deploy/pgvector/init/01_schema.sql`: `chunks` (384-d vector, HNSW
+  cosine, content_sha idempotent re-sync) + append-only `sync_log`
+  provenance). `guideline-rag` joins the data tier with
+  `VECTOR_BACKEND`/`VECTOR_DB_URL` env wired; bootstrap generates
+  `RAG_VECTOR_DB_PASS`. Nothing reads or writes it until the GPU pilot
+  flips `VECTOR_BACKEND=sbert`.
+- Mediator version bumped to v0.6.1 surface (`health` unchanged; new
+  routes above); OpenAPI 0.6.1.
+
+### Fixed
+- **Live finding: question-template filler degrades BM25 specificity.**
+  Templated phrasing ("What do the guidelines recommend for managing X?")
+  injected corpus-frequent vocabulary that pushed a GARBAGE term above the
+  retrieval threshold (verified live) where the bare term correctly
+  refused. `questionsFromContext` now passes the bare clinical term as the
+  question — documented in code with the evidence trail.
+- CDS card summaries no longer open with citation markers / markdown
+  section headers ("[ANTICOAG-BRIDGE §1] ## 1."); first-sentence extraction
+  strips markers and heading fragments.
+- FHIR status concepts are read via `coding[].code` tokens (clinicalStatus/
+  verificationStatus), not display names — resolved/refuted conditions are
+  now correctly excluded from question generation.
+
+### Verified
+- unit **69/69** (9 new guided-decoding tests), node **36/36** (14 new
+  cdshooks tests), integration **16/16** (6 new CDS tests) vs live native
+  stack; seed eval **98% retrieval** (41/42, unchanged); locust 20u sanity
+  p50 19 ms / p95 31 ms (no regression); audit chain ok after CDS traffic.
+- Live CDS behavior verified: prefetch → cited info cards; garbage context
+  → single coverage card; wrong hook / missing patientId → 400; no
+  prefetch + no FHIR → 502 (fail closed).
+
 ## [0.6.0] — Safety & governance capability wave (M19–M23) + tech radar
 
 ### Added

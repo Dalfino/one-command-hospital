@@ -1,4 +1,4 @@
-# One-Command Hospital — Guideline Copilot (v0.6.0)
+# One-Command Hospital — Guideline Copilot (v0.6.1)
 
 A clinician asks a protocol question **inside the EHR** and gets a cited answer from the
 hospital's own guidelines — or an honest refusal. Zero PHI reaches the AI. One GPU. One command.
@@ -143,6 +143,7 @@ docs/              architecture.md, improvements.md
 | M17 | evidence | **Live Gate 5 run**: integration 10/10 vs native stack, locust 20u+50u (0 errors, p95 31 ms, mock), audit chain intact @1,799 records, live-tier GPU-gap quantified (0/10 traps, 73% cites in extractive). **Found + fixed: verifier grounding contract, no upstream timeout (hung verifier hung clinician), 7-digit phone de-id gap, Presidio lg cold-boot download**. `make test-integration-native` + `make loadtest` now docker-optional |
 | M18 | persistence | **Repo = source of truth**: pushed to private GitHub; `STATE.md` session anchor (recovery protocol + gap ledger); `make bootstrap[-native]` fresh-host onboarding (random-secret .env, health-wait); `.dockerignore` ×5; **Gate 5 re-verified post-reset** (10/10, 37/37, 17/17, 0 load errors p95 26–27 ms, audit ok @2,615) |
 | M19–M23 | safety+governance | **Injection guard** (Gate 0 question screen, Gate 1b poisoned-chunk drop, 8/8 live refusals) · **calibration** (ECE + risk-coverage + abstention threshold, mock-mode caveat) · **sense-consistency verifier** (historical/family conflict class) · **clinician review queue + feedback→eval loop** (live E2E verified, weekly CI drift job) · **claim-level faithfulness** (first measurement 0.94) · `docs/tech_radar.md` (ADOPT/PILOT/WATCH/REJECT emerging-tech scan) |
+| M24 (v0.6.1) | tech-radar ADOPT wave | **Guided decoding** — answer schema (`covered`/`answer`/`citations`) enforced at the vLLM decoding level, not just the prompt; legacy servers degrade, malformed structured output fails closed (`deploy/vllm/`) · **CDS Hooks `patient-view`** — the copilot appears INSIDE the chart: `GET /cds-services` + hook service riding the same pipeline (de-id → RAG → verify → FHIR → audit → review), prefetch-preferred, fail-closed without context; refusals emit no card, all-empty gets one coverage card · **pgvector in the data tier** — `rag-vector-db` + schema in compose, dormant until the GPU pilot flips `VECTOR_BACKEND=sbert`. Live-verified: unit 69/69, node 36/36, integration 16/16 (6 new CDS tests), seed eval 98% retrieval, load p95 31 ms. Found + fixed live: question-template filler words degrade BM25 specificity (bare clinical terms now the query contract) |
 
 ## Licensing note
 

@@ -21,6 +21,7 @@ import { audit, verifyChain, auditPath } from "./audit.js";
 import { enqueue as reviewEnqueue, listOpen as reviewListOpen, counts as reviewCounts,
          resolve as reviewResolve, isDecision, feedbackPath } from "./review.js";
 import { logEvent, newRequestId, questionHash } from "./logging.js";
+import * as cdsHooks from "./cdshooks.js";
 import {
   REQUESTS, DURATION, REFUSALS, UNGROUNDED,
   SIGNOFFS, AUDIT_EVENTS, AUDIT_VERIFY_FAILURES, AUDIT_RECORDS,
@@ -119,154 +120,172 @@ app.get("/audit/verify", async (_req, res) => {
   res.json({ ...result, file: auditPath() });
 });
 
+/** The ONE clinical pipeline every surface rides (v0.6.1: /process AND the
+ *  CDS Hooks patient-view facade share it — one de-id path, one verifier
+ *  contract, one audit trail, one review queue).
+ *  question → deid → RAG → verifier → FHIR Communication → audit → review.
+ *  Throws on hard upstream failure (caller maps to 502); per-surface metrics
+ *  are labeled with `route` so the CDS facade never pollutes /process stats. */
+async function runPipeline({ question, contextText = "", patientId = null,
+                             userId = "unknown", route = "/process",
+                             requestId = null }) {
+  const started = Date.now();
+
+  // 1. De-ID the QUESTION itself — a typed narrative can carry identifiers.
+  const deidQ = await postJson(DEID_URL, { text: question }, requestId);
+  const scrubbedQuestion = deidQ.anonymized;
+
+  // 2. De-ID any note context BEFORE it may reach the LLM path.
+  let scrubbedContext = "";
+  let deidMeta = { question_findings: deidQ.finding_count };
+  if (contextText) {
+    const deid = await postJson(DEID_URL, { text: contextText }, requestId);
+    scrubbedContext = deid.anonymized;
+    deidMeta.context_findings = deid.finding_count;
+  }
+
+  // 3. Ask the guideline RAG service (citations forced inside).
+  const rag = await postJson(RAG_URL, { question: scrubbedQuestion }, requestId);
+  if (rag.refusal) REFUSALS.inc({ route, reason: rag.refusal_reason || "unspecified" });
+
+  // 4. Verify grounding (Phase 1: medspaCy ConText replaces heuristics).
+  let verification;
+  if (rag.refusal) {
+    verification = { grounded: true, notes: ["verifier skipped (refusal)"] };
+  } else if (!(rag.citations || []).length) {
+    // HARD RULE (regression-guarded by tests/integration): an answer with
+    // zero citations is ungrounded by definition. It must be flagged for
+    // human review — never passed to the EHR as if it were verified.
+    verification = { grounded: false, notes: ["answer carried no citations — flagged for review"] };
+    UNGROUNDED.inc({ route, note: "no citations" });
+  } else {
+    try {
+      verification = await postJson(VERIFY_URL, {
+        answer: rag.answer,
+        sources: rag.citations.map((c) => ({
+          corpus_id: c.corpus_id,
+          section: c.section,
+          text: c.text || c.title,  // quoted section text grounds the answer; title is the last resort
+        })),
+      }, requestId);
+      if (!verification.grounded) UNGROUNDED.inc({ route });
+    } catch {
+      // verifier down → fail CLOSED: flag for review, never silently pass
+      verification = { grounded: false, notes: ["verifier unreachable"] };
+      UNGROUNDED.inc({ route, note: "verifier unreachable" });
+    }
+  }
+
+  // 5. Write back as a FHIR Communication with full provenance.
+  const communication = {
+    resourceType: "Communication",
+    id: randomUUID(),
+    status: "completed",
+    category: [
+      {
+        coding: [
+          { system: "http://one-command-hospital.local/ai", code: "guideline-answer" },
+        ],
+      },
+    ],
+    subject: patientId ? { reference: `Patient/${patientId}` } : undefined,
+    sender: { display: "Guideline Copilot (advisory)" },
+    sent: new Date().toISOString(),
+    payload: [
+      {
+        contentString: JSON.stringify(
+          {
+            question: scrubbedQuestion, // scrubbed — raw question never persisted
+            scrubbed_context: scrubbedContext || undefined,
+            deid: deidMeta,
+            answer: rag.answer,
+            refusal: rag.refusal,
+            citations: rag.citations, // corpus id + edition + section
+            grounding: verification.grounded,
+            verifier_notes: verification.notes,
+            model: rag.model,
+            latency_ms: rag.latency_ms,
+            auth_mode: authMode(),
+            human_action: "pending_review", // closed by clinician sign-off
+            requested_by: userId,
+          },
+          null,
+          2
+        ),
+      },
+    ],
+  };
+
+  let fhir = { written: false };
+  try {
+    const r = await fetch(`${MEDPLUM_FHIR_URL}/Communication`, {
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+      method: "POST",
+      headers: {
+        ...(await fhirHeaders()),
+        "X-Request-ID": requestId,
+      },
+      body: JSON.stringify(communication),
+    });
+    if (authMode() === "unauthenticated-v0") fhir.warning = "sandbox: unauthenticated writeback";
+    fhir = { ...fhir, written: r.ok, status: r.status };
+  } catch {
+    /* Medplum down → still return the answer to the clinician */
+  }
+
+  // 6. Audit AFTER the outcome is known; detail carries no raw narrative.
+  const record = audit(userId, "answer", {
+    communication_id: communication.id,
+    patient_ref: patientId ? `Patient/${patientId}` : null,
+    refusal: rag.refusal,
+    grounded: verification.grounded,
+    citations: (rag.citations || []).map((c) => `${c.corpus_id}§${c.section}@${c.edition}`),
+    deid_findings: deidMeta,
+    fhir_written: fhir.written,
+    total_latency_ms: Date.now() - started,
+  });
+  AUDIT_EVENTS.inc({ route, action: "answer" });
+
+  // 6b. Ungrounded answers land in the clinician review queue (M22) —
+  // "pending_review" becomes a worklist item, not just a JSON flag.
+  if (!verification.grounded) {
+    const item = reviewEnqueue({
+      qid: record.seq,               // audit seq doubles as the queue id
+      audit_seq: record.seq,
+      communication_id: communication.id,
+      question_sha: questionHash(scrubbedQuestion),
+      reason: (verification.notes || []).join("; ") || "ungrounded answer",
+    });
+    if (item) REVIEW_OPEN.set({ route: "review" }, reviewCounts().open);
+  }
+
+  logEvent("ai-mediator", "answer", {
+    question_sha: questionHash(scrubbedQuestion),
+    question_chars: question.length,
+    refusal: rag.refusal,
+    grounded: verification.grounded,
+    citations: (rag.citations || []).length,
+    fhir_written: fhir.written,
+    audit_seq: record.seq,
+    surface: route,
+    total_latency_ms: Date.now() - started,
+  }, { requestId });
+
+  return { communication, fhir, audit_seq: record.seq, rag, verification,
+           total_latency_ms: Date.now() - started };
+}
+
 app.post("/process", async (req, res) => {
   const trail = metricsTrail("/process");
   res.on("finish", () => trail(req, res));
-  const started = Date.now();
   const { question, contextText = "", patientId = null, userId = "unknown" } = req.body || {};
   if (!question) return res.status(400).json({ error: "question required" });
 
   try {
-    // 1. De-ID the QUESTION itself — a typed narrative can carry identifiers.
-    const deidQ = await postJson(DEID_URL, { text: question }, req.id);
-    const scrubbedQuestion = deidQ.anonymized;
-
-    // 2. De-ID any note context BEFORE it may reach the LLM path.
-    let scrubbedContext = "";
-    let deidMeta = { question_findings: deidQ.finding_count };
-    if (contextText) {
-      const deid = await postJson(DEID_URL, { text: contextText }, req.id);
-      scrubbedContext = deid.anonymized;
-      deidMeta.context_findings = deid.finding_count;
-    }
-
-    // 3. Ask the guideline RAG service (citations forced inside).
-    const rag = await postJson(RAG_URL, { question: scrubbedQuestion }, req.id);
-    if (rag.refusal) REFUSALS.inc({ route: "/process", reason: rag.refusal_reason || "unspecified" });
-
-    // 4. Verify grounding (Phase 1: medspaCy ConText replaces heuristics).
-    let verification;
-    if (rag.refusal) {
-      verification = { grounded: true, notes: ["verifier skipped (refusal)"] };
-    } else if (!(rag.citations || []).length) {
-      // HARD RULE (regression-guarded by tests/integration): an answer with
-      // zero citations is ungrounded by definition. It must be flagged for
-      // human review — never passed to the EHR as if it were verified.
-      verification = { grounded: false, notes: ["answer carried no citations — flagged for review"] };
-      UNGROUNDED.inc({ route: "/process", note: "no citations" });
-    } else {
-      try {
-        verification = await postJson(VERIFY_URL, {
-          answer: rag.answer,
-          sources: rag.citations.map((c) => ({
-            corpus_id: c.corpus_id,
-            section: c.section,
-            text: c.text || c.title,  // quoted section text grounds the answer; title is the last resort
-          })),
-        }, req.id);
-        if (!verification.grounded) UNGROUNDED.inc({ route: "/process" });
-      } catch {
-        // verifier down → fail CLOSED: flag for review, never silently pass
-        verification = { grounded: false, notes: ["verifier unreachable"] };
-        UNGROUNDED.inc({ route: "/process", note: "verifier unreachable" });
-      }
-    }
-
-    // 5. Write back as a FHIR Communication with full provenance.
-    const communication = {
-      resourceType: "Communication",
-      id: randomUUID(),
-      status: "completed",
-      category: [
-        {
-          coding: [
-            { system: "http://one-command-hospital.local/ai", code: "guideline-answer" },
-          ],
-        },
-      ],
-      subject: patientId ? { reference: `Patient/${patientId}` } : undefined,
-      sender: { display: "Guideline Copilot (advisory)" },
-      sent: new Date().toISOString(),
-      payload: [
-        {
-          contentString: JSON.stringify(
-            {
-              question: scrubbedQuestion, // scrubbed — raw question never persisted
-              scrubbed_context: scrubbedContext || undefined,
-              deid: deidMeta,
-              answer: rag.answer,
-              refusal: rag.refusal,
-              citations: rag.citations, // corpus id + edition + section
-              grounding: verification.grounded,
-              verifier_notes: verification.notes,
-              model: rag.model,
-              latency_ms: rag.latency_ms,
-              auth_mode: authMode(),
-              human_action: "pending_review", // closed by clinician sign-off
-              requested_by: userId,
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-
-    let fhir = { written: false };
-    try {
-      const r = await fetch(`${MEDPLUM_FHIR_URL}/Communication`, {
-        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-        method: "POST",
-        headers: {
-          ...(await fhirHeaders()),
-          "X-Request-ID": req.id,
-        },
-        body: JSON.stringify(communication),
-      });
-      if (authMode() === "unauthenticated-v0") fhir.warning = "sandbox: unauthenticated writeback";
-      fhir = { ...fhir, written: r.ok, status: r.status };
-    } catch {
-      /* Medplum down → still return the answer to the clinician */
-    }
-
-    // 6. Audit AFTER the outcome is known; detail carries no raw narrative.
-    const record = audit(userId, "answer", {
-      communication_id: communication.id,
-      patient_ref: patientId ? `Patient/${patientId}` : null,
-      refusal: rag.refusal,
-      grounded: verification.grounded,
-      citations: (rag.citations || []).map((c) => `${c.corpus_id}§${c.section}@${c.edition}`),
-      deid_findings: deidMeta,
-      fhir_written: fhir.written,
-      total_latency_ms: Date.now() - started,
-    });
-    AUDIT_EVENTS.inc({ route: "/process", action: "answer" });
-
-    // 6b. Ungrounded answers land in the clinician review queue (M22) —
-    // "pending_review" becomes a worklist item, not just a JSON flag.
-    if (!verification.grounded) {
-      const item = reviewEnqueue({
-        qid: record.seq,               // audit seq doubles as the queue id
-        audit_seq: record.seq,
-        communication_id: communication.id,
-        question_sha: questionHash(scrubbedQuestion),
-        reason: (verification.notes || []).join("; ") || "ungrounded answer",
-      });
-      if (item) REVIEW_OPEN.set({ route: "review" }, reviewCounts().open);
-    }
-
-    logEvent("ai-mediator", "answer", {
-      question_sha: questionHash(scrubbedQuestion),
-      question_chars: question.length,
-      refusal: rag.refusal,
-      grounded: verification.grounded,
-      citations: (rag.citations || []).length,
-      fhir_written: fhir.written,
-      audit_seq: record.seq,
-      total_latency_ms: Date.now() - started,
-    }, { requestId: req.id });
-
-    res.json({ communication, fhir, audit_seq: record.seq, total_latency_ms: Date.now() - started });
+    const out = await runPipeline({ question, contextText, patientId, userId,
+                                    route: "/process", requestId: req.id });
+    res.json({ communication: out.communication, fhir: out.fhir,
+               audit_seq: out.audit_seq, total_latency_ms: out.total_latency_ms });
   } catch (e) {
     audit(userId, "answer_error", { error: String(e.message) });
     AUDIT_EVENTS.inc({ route: "/process", action: "answer_error" });
@@ -313,6 +332,103 @@ app.post("/signoff", async (req, res) => {
     res.json({ ok: p.ok, status: p.status, human_action: action });
   } catch (e) {
     audit(by, "signoff_error", { communication_id: communicationId, error: String(e.message) });
+    res.status(502).json({ error: String(e.message) });
+  }
+});
+
+/**
+ * CDS Hooks facade (v0.6.1 ADOPT, docs/tech_radar.md) — the copilot appears
+ * INSIDE the chart: any CDS Hooks-capable EHR discovers the service here and
+ * calls it on patient view. Cards are built from the SAME pipeline as
+ * /process (de-id → RAG → verify → FHIR writeback → audit → review), so EHR
+ * surfacing adds no new trust path.
+ *
+ * Patient context comes from `prefetch` when the EHR supplies it (preferred —
+ * one round trip, no service-to-EHR credential handling here), otherwise a
+ * direct FHIR read. Context is transient: it becomes retrieval questions and
+ * nothing else — no demographics ever reach cards, logs, or audit detail.
+ */
+app.get("/cds-services", (_req, res) => {
+  res.json(cdsHooks.discovery());
+});
+
+/** Direct FHIR read used when the EHR did not send prefetch. Fails CLOSED:
+ *  without patient context there is no safe question to ask, so the caller
+ *  502s instead of guessing advice from nothing. */
+async function fetchFhirContext(patientId, requestId) {
+  const headers = await fhirHeaders({ Accept: "application/fhir+json" });
+  const get = async (path) => {
+    const r = await fetch(`${MEDPLUM_FHIR_URL}/${path}`, {
+      headers: { ...headers, "X-Request-ID": requestId },
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+    if (!r.ok) throw new Error(`FHIR ${path} → ${r.status}`);
+    return r.json();
+  };
+  const pid = encodeURIComponent(patientId);
+  const [conditions, medications] = await Promise.all([
+    get(`Condition?patient=${pid}&clinical-status=active`),
+    get(`MedicationRequest?patient=${pid}&status=active`),
+  ]);
+  return { conditions, medications };
+}
+
+app.post(`/cds-services/${cdsHooks.SERVICE_ID}`, async (req, res) => {
+  const trail = metricsTrail("/cds-services/patient-view");
+  res.on("finish", () => trail(req, res));
+  const v = cdsHooks.validateHookRequest(req.body);
+  if (!v.ok) {
+    audit("cds-hooks", "cds_request_rejected", { error: v.error });
+    return res.status(400).json({ error: v.error });
+  }
+  const started = Date.now();
+  try {
+    const context = v.prefetch
+      ? cdsHooks.normalizePrefetch(v.prefetch)
+      : await fetchFhirContext(v.patientId, req.id);
+    const questions = cdsHooks.questionsFromContext(context);
+
+    // One pipeline call per question; a single failing question must not
+    // sink the whole card set, so failures are recorded, not thrown.
+    const results = [];
+    for (const q of questions) {
+      try {
+        const out = await runPipeline({ question: q, patientId: v.patientId,
+                                        userId: v.userId, requestId: req.id,
+                                        route: "/cds-services/patient-view" });
+        results.push({ question: q, rag: out.rag, verification: out.verification });
+      } catch (e) {
+        results.push({ question: q, pipeline_error: String(e.message) });
+      }
+    }
+
+    const { cards, stats } = cdsHooks.cardsFromResults(results);
+    audit(v.userId, "cds_hooks_patient_view", {
+      patient_ref: `Patient/${v.patientId}`,
+      context_source: v.prefetch ? "prefetch" : "fhir",
+      questions_asked: stats.asked,
+      answered: stats.answered,
+      refused: stats.refused,
+      pipeline_errors: stats.errors,
+      cards: cards.length,
+      coverage_only: stats.coverage_only,
+      total_latency_ms: Date.now() - started,
+    });
+    AUDIT_EVENTS.inc({ route: "/cds-services/patient-view", action: "cds_hooks_patient_view" });
+    logEvent("ai-mediator", "cds_hooks_patient_view", {
+      patient_sha: questionHash(v.patientId),
+      questions_asked: stats.asked,
+      answered: stats.answered,
+      refused: stats.refused,
+      cards: cards.length,
+      total_latency_ms: Date.now() - started,
+    }, { requestId: req.id });
+    res.json({ cards });
+  } catch (e) {
+    audit(v.userId, "cds_error", { error: String(e.message) });
+    AUDIT_EVENTS.inc({ route: "/cds-services/patient-view", action: "cds_error" });
+    logEvent("ai-mediator", "cds_error", { error: String(e.message) },
+             { level: "error", requestId: req.id });
     res.status(502).json({ error: String(e.message) });
   }
 });

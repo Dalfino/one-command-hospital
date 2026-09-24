@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: AI Mediator API — Guideline Copilot
-  version: 0.4.0
+  version: 0.6.1
   description: |
     The ONE contract every future AI capability rides on: clinical question in,
     cited-and-verified (or refused) answer out, tamper-evident audit + FHIR
@@ -128,6 +128,66 @@ paths:
       responses:
         "200":
           description: text/plain; version=0.0.4
+  /cds-services:
+    get:
+      summary: CDS Hooks discovery (v0.6.1)
+      operationId: cdsDiscovery
+      description: |
+        Standard CDS Hooks endpoint — EHRs call this to discover the
+        guideline copilot's patient-view decision-support service.
+      responses:
+        "200":
+          description: Discovery document with one patient-view service
+  /cds-services/guideline-copilot-patient-view:
+    post:
+      summary: CDS Hooks patient-view hook — cards inside the chart
+      operationId: cdsPatientView
+      description: |
+        Builds up to 3 retrieval questions from the patient's active
+        conditions/medications (prefetch preferred; direct FHIR read
+        otherwise, fail-closed when unavailable). Every question rides the
+        same pipeline as /process. Refusals emit no card; an all-empty
+        result returns exactly one no-coverage card; ungrounded answers
+        render as warning cards linking to /review.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hook, context]
+              properties:
+                hook: { type: string, enum: [patient-view] }
+                context:
+                  type: object
+                  required: [patientId]
+                  properties:
+                    patientId: { type: string }
+                    userId: { type: string }
+                fhirServer: { type: string }
+                prefetch:
+                  type: object
+                  description: EHR-resolved resources (Patient/Condition/MedicationRequest or searchset Bundles)
+      responses:
+        "200":
+          description: CDS Hooks card response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cards:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        summary: { type: string, maxLength: 140 }
+                        indicator: { type: string, enum: [info, warning, critical] }
+                        detail: { type: string }
+                        source: { type: object }
+                        link: { type: object }
+        "400": { description: Wrong hook / missing context.patientId / malformed body }
+        "502": { description: FHIR context unavailable and no prefetch supplied (fail closed) }
 components:
   schemas:
     Citation:

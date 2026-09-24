@@ -16,7 +16,7 @@
 > and `git push origin main`. A session that ends without a push lost its work.
 
 - **Repo:** https://github.com/Dalfino/one-command-hospital (PRIVATE since 2026-09-24)
-- **Version:** v0.6.0 (M19–M23 safety+governance wave + tech radar)
+- **Version:** v0.6.1 (tech-radar ADOPT wave: guided decoding + CDS Hooks + pgvector)
 - **Status:** high-fidelity prototype on synthetic data; Gate 0–5 evidence
   produced in mock/simulated mode; NOT clinically deployable (see Blockers).
 
@@ -67,6 +67,10 @@ download/one-command-hospital/
 Port map: 8100 de-id · 8101 RAG · 8102 verifier · 8103 mediator · 8104 vLLM
 (gpu profile) · 8105 HAPI · 8106 Prometheus · 8107 Grafana · 8300 OpenEMR ·
 8443 edge TLS. Native test stack uses 8210–8213; prod-shape native 8100–8103.
+New in v0.6.1: `rag-vector-db` (pgvector, `data` net, dormant) in compose;
+mediator exposes `GET /cds-services` + `POST /cds-services/guideline-copilot-patient-view`;
+guided decoding env on guideline-rag (`GUIDED_DECODING`, `GUIDED_JSON_FIELD`);
+bootstrap .env gains `RAG_VECTOR_DB_PASS`, `VECTOR_BACKEND`, `VECTOR_DB_URL`.
 
 ## Milestone ledger (detail in CHANGELOG.md)
 
@@ -78,15 +82,16 @@ Port map: 8100 de-id · 8101 RAG · 8102 verifier · 8103 mediator · 8104 vLLM
 | M17 (db0d519, v0.5.0) | **live Gate 5 evidence**: integration 10/10 vs running stack, load 0 errors (p95 31ms @50u), 4 real bugs fixed (citation-text verifier contract, upstream timeouts, 7-digit phone PHI recall, Presidio cold-boot model), docker-optional native test path |
 | M18 (b19cebf, v0.5.1) | repo pushed to private GitHub as source of truth; STATE.md anchor; make bootstrap[-native]; .dockerignore ×5; Gate 5 re-verified after full environment reset |
 | M19–M23 (v0.6.0) | injection guard (8/8 live refusals) · calibration (ECE/risk-coverage/threshold) · sense-consistency verifier (historical/family) · clinician review queue + feedback→eval loop (live E2E verified) · claim-level faithfulness (0.94 first measurement) · docs/tech_radar.md |
+| M24 (v0.6.1) | tech-radar ADOPT wave — **guided decoding** (vLLM `guided_json` answer schema, fail-closed parse, deploy/vllm/) · **CDS Hooks patient-view** (`/cds-services` discovery + hook facade on the shared `runPipeline`, prefetch-preferred/fail-closed, cards w/ review links) · **pgvector in compose data tier** (rag-vector-db + schema, dormant until VECTOR_BACKEND=sbert). Live: unit 69/69, node 36/36, integration 16/16, seed eval 98%, load p95 31ms |
 
 ## Gate status (deployment_readiness.md is the authoritative matrix)
 
 | Gate | Meaning | State |
 |---|---|---|
 | 0 | Repo hygiene, license, docs | ✅ |
-| 1 | Unit + node tests | ✅ 37/37 + 17/17 |
+| 1 | Unit + node tests | ✅ 69/69 + 36/36 |
 | 2 | Eval gates (seed + full) | ✅ 98% / 95% (mock-mode generator) |
-| 3 | Integration tier (golden path, fail-closed, PHI white-out) | ✅ 10/10 vs live stack |
+| 3 | Integration tier (golden path, fail-closed, PHI white-out, CDS Hooks) | ✅ 16/16 vs live stack |
 | 4 | Security/ops artifacts (TLS edge, backup, SBOM, CI, alerts) | ✅ artifacts done; real-cert TLS + pen test pending |
 | 5 | Load/SLO evidence | ✅ mock-mode: 0 errors, p95 31ms @50u, 15.4 req/s; **GPU-stack re-run = final sign-off** |
 
@@ -133,7 +138,10 @@ for clinician walkthrough, demo dataset load story.
 
 > Full bar-by-bar assessment + prioritized upgrade roadmap (P0 buildable /
 > P1 GPU-host / P2 organizational) lives in **`docs/world_class_bar.md`** —
-> read that before planning any new work wave.
+> read that before planning any new work wave. The tech-radar ADOPT list is
+> fully shipped (v0.6.1); **PILOT experiments are bundled into the GPU-host
+> session** (embedding swap, reranker, MedGemma 1.5 vs BioMistral, guardrail
+> classifier) — one session, four evidence-backed decisions.
 
 1. Real clinical guideline corpus + clinical steward sign-off (content is
    synthetic/placeholder — this is the #1 blocker and is a human task).

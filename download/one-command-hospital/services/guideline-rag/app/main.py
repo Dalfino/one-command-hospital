@@ -32,6 +32,7 @@ from pydantic import BaseModel
 
 from .retrieval import HybridRetriever
 from .injection_guard import scan as injection_scan
+from .guided_decoding import guided_enabled, guided_request_fields, parse_guided
 from .hardening import Counter, Gauge, Histogram, install, json_log, request_id_of
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]   # container: /app  (repo override via GUIDELINES_DIR)
@@ -159,11 +160,26 @@ class Answer(BaseModel):
     retrieval: Optional[dict] = None
 
 
-def build_prompt(question: str, hits: list) -> str:
+def build_prompt(question: str, hits: list, guided: bool | None = None) -> str:
     ctx = "\n\n".join(
         f'--- [{h["corpus_id"]} §{h["section"]}] (edition {h["edition"]}) ---\n{h["text"]}'
         for h in hits
     )
+    if guided is None:
+        guided = guided_enabled()
+    if guided:
+        # Matches the guided_json schema (guided_decoding.ANSWER_SCHEMA): the
+        # server constrains decoding to this object; the prompt mirrors it so
+        # intent and constraint agree.
+        return (
+            "You are a hospital guideline assistant. Use ONLY the excerpts below.\n"
+            'Respond with a JSON object with keys "covered" (boolean), "answer" '
+            '(string), "citations" (array of {"corpus_id", "section"}).\n'
+            "In `answer`, cite every claim inline as [CORPUS_ID §N]. If the excerpts "
+            'do not answer the question, set covered=false and answer exactly: '
+            "NOT_COVERED\n\n"
+            f"EXCERPTS:\n{ctx}\n\nQUESTION: {question}\nANSWER (JSON):"
+        )
     return (
         "You are a hospital guideline assistant. Use ONLY the excerpts below.\n"
         "Cite every claim inline as [CORPUS_ID §N]. If the excerpts do not answer "
@@ -172,11 +188,19 @@ def build_prompt(question: str, hits: list) -> str:
     )
 
 
-def call_llm(prompt: str) -> str:
+def call_llm(prompt: str, guided: bool | None = None) -> str:
+    body = {"model": LLM_MODEL, "temperature": 0.1, "max_tokens": 500,
+            "messages": [{"role": "user", "content": prompt}]}
+    if guided is None:
+        guided = guided_enabled()
+    if guided:
+        # Decoding-level contract (ADOPT, tech_radar): the model cannot emit
+        # anything but the answer schema. Servers that ignore the field simply
+        # answer free text and the legacy parser path takes over downstream.
+        body.update(guided_request_fields())
     r = requests.post(
         f"{LLM_BASE_URL}/chat/completions",
-        json={"model": LLM_MODEL, "temperature": 0.1, "max_tokens": 500,
-              "messages": [{"role": "user", "content": prompt}]},
+        json=body,
         timeout=90,
     )
     r.raise_for_status()
@@ -269,10 +293,11 @@ def answer(q: Question):
         return _refusal("top sections too close to disambiguate safely",
                         int((time.time() - t0) * 1000), retrieval_meta)
 
-    prompt = build_prompt(q.question, hits)
+    guided = guided_enabled()
+    prompt = build_prompt(q.question, hits, guided=guided)
     llm_used = True
     try:
-        raw = call_llm(prompt)
+        raw = call_llm(prompt, guided=guided)
     except Exception:
         # Extractive fallback (mock-LLM mode): the pipeline degrades honestly
         # instead of dying. The citation header is PREPENDED so downstream
@@ -281,6 +306,24 @@ def answer(q: Question):
         llm_used = False
         h = hits[0]
         raw = f'[{h["corpus_id"]} §{h["section"]}] ' + h["text"].split("\n", 1)[-1].strip()[:800]
+
+    # Guided-decoding path: when the server honored guided_json the content is
+    # a strict JSON object. covered=false is the generator's mechanical refusal
+    # (no room for free-text refusal drift). parse_guided() returning None on a
+    # JSON-looking payload means a constrained server malfunctioned -> fail
+    # closed rather than forward malformed output. Free text (legacy servers,
+    # extractive fallback) passes straight through to the legacy contract.
+    guided_used = False
+    guided_obj = parse_guided(raw)
+    if guided_obj is not None:
+        guided_used = True
+        if not guided_obj["covered"]:
+            return _refusal("generator judged the corpus does not cover this",
+                            int((time.time() - t0) * 1000), retrieval_meta)
+        raw = guided_obj["answer"]
+    elif raw.lstrip().startswith("{"):
+        return _refusal("generator produced unparseable structured output",
+                        int((time.time() - t0) * 1000), retrieval_meta)
 
     if "NOT_COVERED" in raw.upper():
         return _refusal("generator judged the corpus does not cover this",
@@ -297,7 +340,7 @@ def answer(q: Question):
     _cache_put(key, result.model_dump())
     json_log("guideline-rag", "answer", request_id=request_id_of(),
              question_sha=hashlib.sha256(q.question.encode()).hexdigest()[:12],
-             refusal=False, citations=len(cites), llm=llm_used,
+             refusal=False, citations=len(cites), llm=llm_used, guided=guided_used,
              latency_ms=result.latency_ms)
     return result
 
