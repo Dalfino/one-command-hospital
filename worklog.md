@@ -140,3 +140,23 @@ Stage Summary:
 - Old "Willow Health AI Suite" fully retired from user-visible copy; "Willow" survives only as "a Willow Lab research build" (permitted). Files: willow-data.ts, hero, site-nav, why-now, how-it-works, improvements, combination, proof, compliance, deployment, roadmap, site-footer, page.tsx, layout.tsx, eslint.config.mjs (+ removed 4 obsolete components).
 - Verification green: lint exit 0; desktop+mobile zero console/page errors, zero horizontal overflow, anchors/tabs/expanders/counters/footer-stickiness all pass.
 - Note for main agent: whitepaper (download/) still carries the old suite story and is explicitly out of scope here; dist artifacts inside download/one-command-hospital/smart-app are excluded from lint via eslint.config.mjs ignores.
+
+---
+Task ID: 12
+Agent: main (Super Z)
+Task: Clinical-readiness audit + hardening wave M7-M11 (user question: "is everything done and ready for clinical deployment? improvements across smoothness/efficiency/accuracy/infrastructure/security/governance?")
+
+Work Log:
+- Audited repo state post-platform-resync: git remote lost, history rewritten locally (UUID commits); all content intact; 0-insertion permission diffs only. No PAT in env (used inline-only last session) → push pending.
+- Found + fixed 2 real bugs: ai-mediator Dockerfile never COPYed medplum-auth.js (container would crash on boot); README referenced missing .env.example (created).
+- M7 Security: compose network segmentation (internal `data` tier), non-root USER + cap_drop ALL + no-new-privileges + read-only rootfs on all 4 AI services, healthchecks + service_healthy gating, resource limits, per-IP token-bucket rate limits, body caps, security headers (shared zero-dep hardening.py duplicated per service by design), .env.example.
+- M8 Governance: hash-chained append-only audit trail (audit.js, genesis→sha256 chain, /audit/verify + verifyChain walk), audit events on answer/signoff/error; mediator v0.3 scrubs the QUESTION text too (raw question was going to LLM path — real PHI gap); docs/governance.md (roles, change control classes, incident severity ladder, kill criteria, EU-AI-Act/FDA/HIPAA posture), docs/model_card.md, docs/security_checklist.md, docs/deployment_readiness.md (Gate 0-5 matrix with explicit NOT-READY verdict + named sign-off block).
+- M9 Observability: observe profile (Prometheus :8106, Grafana :8107), prometheus.yml + alert_rules.yml (refusal fatigue >40%, ungrounded answers critical, audit-chain broken critical, p95>8s, 5xx, service down), 8-panel Grafana dashboard; /metrics on all 4 services (zero-dep text exposition, Python + Node mirrors).
+- M10 Accuracy: eval/generate_eval.py (deterministic, no RNG) → qa_full.yaml 208 items (52 seed + 63 template + 21 keyword-probe + 21 navigation + 6 edition + 45 hand-verified traps); BM25 trap sanity probe flags vocabulary-overlap traps for review (lmwh-renal top, none actually covered); run_eval.py accepts file arg + separate report_full.md. RESULTS: seed 41/42 = 98%, FULL 146/153 = 95% (gate ≥80% green both).
+- M11 Ops: tools/doctor.sh + `make doctor` (docker/env/ports/disk/GPU/secret-hygiene preflight), .github/workflows/ci.yml (eval gates both sets, py_compile, YAML validity, node --check, smart-app build, compose config, gitleaks), TTL+LRU answer cache in guideline-rag, RETRIEVAL_MARGIN ambiguity gate (default 0.02), vLLM --enable-prefix-caching, verifier NLP built once (was per request), Makefile targets observe/eval-full/audit-verify.
+- Synced real numbers to README (status banner + milestone table M7-M11) and portal willow-data.ts (hero chips 208/95%, proof metrics 208/95%/55/80%, roadmap bullets) in workspace app + repo portal/ copy; bun run lint exit 0.
+- Committed locally: 0875c1f (59 files, +3,485). PUSH PENDING: needs fresh PAT from user (old one shared in chat must be rotated); when provided, reconcile rewritten local history with GitHub M0-M6 history (prefer: re-apply M7-M11 changes on top of remote main to preserve milestone SHAs).
+
+Stage Summary:
+- VERDICT DELIVERED: not clinically deployable (research pilot). Blocking opens: real protocols + steward sign-off, live-mode trap refusal + grounding eval (GPU), TLS + pen test, Medplum auth fail-closed, structured logs + off-box shipping, backup/restore drills, load test, regulatory counsel, committee ratification.
+- Everything implementable in-sandbox landed: 5 milestones, 2 crash/security bugs fixed, eval 4x, gates/alerts/docs codified. Portal + README carry only real numbers.
