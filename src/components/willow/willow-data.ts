@@ -316,7 +316,7 @@ export type ProofMetric = {
 export const PROOF_METRICS: ProofMetric[] = [
   { to: 208, suffix: "", label: "questions in the exam", sub: "153 traced + 55 refusal traps; hand-written seed kept verbatim" },
   { to: 95, suffix: "%", label: "retrieval on the full exam", sub: "146 of 153 traced items; seed set holds 98%" },
-  { to: 55, suffix: "", label: "refusal traps", sub: "out-of-scope questions must return NOT_COVERED" },
+  { to: 54, suffix: "", label: "unit + node tests green", sub: "plus docker integration tier: golden path, fail-closed, PHI white-out" },
   { to: 80, suffix: "%", label: "CI floor", sub: "retrieval below this fails the build" },
 ];
 
@@ -588,6 +588,10 @@ export const PHASES: Phase[] = [
       { text: "Hybrid retrieval — BM25 + optional SBERT channel", done: true },
       { text: "Eval set grows 52 → 208 questions (95% full / 98% seed)", done: true },
       { text: "Hardening wave: audit chain, observability, CI, readiness gate", done: true },
+      { text: "Test pyramid: 54 unit/node tests + docker golden-path & PHI-leak tier in CI", done: true },
+      { text: "Tracing: JSON logs (PHI-redacting) + X-Request-ID across all services", done: true },
+      { text: "Edge TLS, verified backup/restore drills, load test vs kill-criteria SLOs", done: true },
+      { text: "Commercial hygiene: LICENSE, CHANGELOG, SECURITY, OpenAPI, SBOM register", done: true },
     ],
     gate: "Gate: ≥85% grounded in live mode (needs GPU run) ⬜",
   },
