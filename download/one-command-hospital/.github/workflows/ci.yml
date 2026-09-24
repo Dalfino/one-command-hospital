@@ -31,25 +31,30 @@ jobs:
             eval/report_full.md
 
   python-check:
-    name: Python compile + YAML validity
+    name: Python compile + YAML validity + unit tier
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install test deps
+        run: pip install -r tests/requirements.txt
+      - name: Unit tier (hardening, retrieval, cache, citations, logging, eval gate)
+        run: python -m pytest tests/unit -q
       - name: Compile all service Python
         run: |
           python -m py_compile services/deid-gate/app/main.py services/deid-gate/app/hardening.py \
             services/guideline-rag/app/main.py services/guideline-rag/app/hardening.py \
             services/guideline-rag/app/retrieval.py \
             services/verifier/app/main.py services/verifier/app/hardening.py \
-            eval/run_eval.py eval/generate_eval.py
+            eval/run_eval.py eval/generate_eval.py tools/loadtest/locustfile.py
       - name: Validate YAML (compose, manifest, observe, eval)
         run: |
           python - <<'PY'
           import yaml, glob
-          files = ["docker-compose.yml", "guidelines/manifest.yaml"] + \
+          files = ["docker-compose.yml", "guidelines/manifest.yaml", "docs/api/openapi.yaml"] + \
+                  glob.glob("tests/**/*.yml", recursive=True) + \
                   glob.glob("observe/**/*.yml", recursive=True) + \
                   glob.glob("observe/**/*.yaml", recursive=True) + \
                   glob.glob("eval/qa_*.yaml")
@@ -60,7 +65,7 @@ jobs:
           PY
 
   node-check:
-    name: Node syntax + smart-app build
+    name: Node syntax + tests + smart-app build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -72,7 +77,10 @@ jobs:
           node --check services/ai-mediator/main.js
           node --check services/ai-mediator/medplum-auth.js
           node --check services/ai-mediator/audit.js
+          node --check services/ai-mediator/logging.js
           node --check services/ai-mediator/metrics.js
+      - name: Node test tier (audit chain, log redaction, metrics)
+        run: node --test tests/node/*.test.mjs
       - name: Build SMART widget
         working-directory: smart-app
         run: |
@@ -84,12 +92,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate compose file (dummy env values)
+      - name: Validate compose files (dummy env values)
         run: |
           docker compose --env-file /dev/null config -q \
             || OPENEMR_DB_ROOT_PASS=x OPENEMR_DB_PASS=x OPENEMR_ADMIN_USER=x OPENEMR_ADMIN_PASS=x \
                MEDPLUM_DB_PASS=x HAPI_DB_PASS=x docker compose config -q
+          OPENEMR_DB_ROOT_PASS=x OPENEMR_DB_PASS=x OPENEMR_ADMIN_USER=x OPENEMR_ADMIN_PASS=x \
+            MEDPLUM_DB_PASS=x HAPI_DB_PASS=x \
+            docker compose -f tests/integration/docker-compose.test.yml config -q
       - name: Gitleaks secret scan
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  integration:
+    name: Integration tier (golden path, fail-closed, PHI leak)
+    runs-on: ubuntu-latest
+    needs: [eval-gate, python-check, node-check]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test deps
+        run: pip install -r tests/requirements.txt
+      - name: Boot test stack (mock-LLM mode)
+        run: docker compose -f tests/integration/docker-compose.test.yml up -d --build
+      - name: Run integration tier
+        run: python -m pytest tests/integration -m integration -q
+      - name: Tear down
+        if: always()
+        run: docker compose -f tests/integration/docker-compose.test.yml down -v

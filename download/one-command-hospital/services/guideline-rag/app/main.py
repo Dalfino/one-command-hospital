@@ -31,10 +31,15 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from .retrieval import HybridRetriever
-from .hardening import Counter, Gauge, Histogram, install
+from .hardening import Counter, Gauge, Histogram, install, json_log, request_id_of
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
-GUIDELINES = ROOT / "guidelines"
+ROOT = pathlib.Path(__file__).resolve().parents[1]   # container: /app  (repo override via GUIDELINES_DIR)
+GUIDELINES = pathlib.Path(
+    os.environ.get("GUIDELINES_DIR", ROOT / "guidelines")
+)
+# Path contract:
+#   - in-container: /app/app/main.py → parents[1]=/app → /app/guidelines (compose mount) ✓
+#   - repo/CI runs: set GUIDELINES_DIR=<repo>/guidelines (see tests/conftest.py)
 THRESHOLD = float(os.environ.get("RETRIEVAL_THRESHOLD", "0.18"))
 MARGIN = float(os.environ.get("RETRIEVAL_MARGIN", "0.02"))
 LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "http://llm:8000/v1")
@@ -107,6 +112,24 @@ def startup():
 
 class Question(BaseModel):
     question: str
+
+
+CITE_RE = re.compile(r"\[([A-Z][A-Z0-9-]+)\s*§(\d+)\]")
+
+
+def extract_citations(raw: str, manifest: dict) -> List["Citation"]:
+    """Pull [CORPUS_ID §N] markers out of generator output, dedupe, and drop
+    anything not in the manifest — a citation the corpus can't back is not a
+    citation. Pure function so the eval/tests can exercise it without HTTP."""
+    cites, seen = [], set()
+    for cid, sec in CITE_RE.findall(raw):
+        if (cid, sec) in seen or cid not in manifest:
+            continue
+        seen.add((cid, sec))
+        e = manifest[cid]
+        cites.append(Citation(corpus_id=cid, section=sec,
+                              edition=e["edition"], title=e["title"]))
+    return cites
 
 
 class Citation(BaseModel):
@@ -186,39 +209,48 @@ def answer(q: Question):
     hits = [{**SECTIONS[r["index"]], "score": r["score"]}
             for r in results if r["score"] >= THRESHOLD]
     if not hits:
+        json_log("guideline-rag", "refusal", request_id=request_id_of(),
+                 reason="below-threshold",
+                 question_sha=hashlib.sha256(q.question.encode()).hexdigest()[:12])
         return _refusal("no guideline section met retrieval confidence",
                         int((time.time() - t0) * 1000), retrieval_meta)
 
     # Gate 2 — ambiguity: top-2 nearly tied → refuse (MARGIN=0 disables).
     if MARGIN > 0 and len(results) >= 2 and gap < MARGIN:
+        json_log("guideline-rag", "refusal", request_id=request_id_of(),
+                 reason="ambiguity-margin",
+                 question_sha=hashlib.sha256(q.question.encode()).hexdigest()[:12])
         return _refusal("top sections too close to disambiguate safely",
                         int((time.time() - t0) * 1000), retrieval_meta)
 
     prompt = build_prompt(q.question, hits)
+    llm_used = True
     try:
         raw = call_llm(prompt)
     except Exception:
-        # Extractive fallback so the pipeline degrades honestly instead of dying.
-        raw = hits[0]["text"].split("\n", 1)[-1].strip()[:800]
+        # Extractive fallback (mock-LLM mode): the pipeline degrades honestly
+        # instead of dying. The citation header is PREPENDED so downstream
+        # grounding keeps working — an answer with no citation is ungrounded
+        # by definition (the mediator flags those).
+        llm_used = False
+        h = hits[0]
+        raw = f'[{h["corpus_id"]} §{h["section"]}] ' + h["text"].split("\n", 1)[-1].strip()[:800]
 
     if "NOT_COVERED" in raw.upper():
         return _refusal("generator judged the corpus does not cover this",
                         int((time.time() - t0) * 1000), retrieval_meta)
 
     # Improvement #2: stamp every citation with the manifest edition + title.
-    cites, seen = [], set()
-    for cid, sec in re.findall(r"\[([A-Z][A-Z0-9-]+)\s*§(\d+)\]", raw):
-        key_pair = (cid, sec)
-        if key_pair in seen or cid not in manifest:
-            continue
-        seen.add(key_pair)
-        e = manifest[cid]
-        cites.append(Citation(corpus_id=cid, section=sec, edition=e["edition"], title=e["title"]))
+    cites = extract_citations(raw, manifest)
 
     result = Answer(answer=raw, citations=cites, refusal=False,
                     latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL,
                     retrieval=retrieval_meta)
     _cache_put(key, result.model_dump())
+    json_log("guideline-rag", "answer", request_id=request_id_of(),
+             question_sha=hashlib.sha256(q.question.encode()).hexdigest()[:12],
+             refusal=False, citations=len(cites), llm=llm_used,
+             latency_ms=result.latency_ms)
     return result
 
 

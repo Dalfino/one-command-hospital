@@ -1,0 +1,50 @@
+# One-Command Hospital — edge TLS terminator.
+#
+# Sandbox profile: automatic self-signed CA (tls internal). PRODUCTION: point
+# a real hostname at this box and replace `tls internal` with the ACME block
+# (or drop a cert/key into /data) — see docs/security_checklist.md item T-1.
+#
+#   make edge-up        →  https://localhost:8443
+#
+# Routes:
+#   /widget/*   SMART on FHIR widget (static build from smart-app/dist)
+#   /api/*      ai-mediator  (ask / signoff / audit)
+#   /emr/*      OpenEMR pass-through (same-origin convenience for pilots)
+
+{
+	# Internal CA is regenerated per-volume; production uses real certs.
+	tls internal
+}
+
+:8443 {
+	# SMART widget — static SPA with history-friendly fallback.
+	handle /widget/* {
+		root * /srv/widget
+		uri strip_prefix /widget
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Mediator API — TLS terminates here; inside the network it stays plain
+	# (mTLS between services is a production item on the security checklist).
+	handle /api/* {
+		uri strip_prefix /api
+		reverse_proxy ai-mediator:3000
+	}
+
+	handle /emr/* {
+		uri strip_prefix /emr
+		reverse_proxy openemr:80
+	}
+
+	handle {
+		respond "One-Command Hospital edge — nothing here." 404
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options    "nosniff"
+		X-Frame-Options           "DENY"
+		-Server
+	}
+}

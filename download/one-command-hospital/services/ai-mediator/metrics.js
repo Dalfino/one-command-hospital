@@ -8,12 +8,19 @@
 
 const BUCKETS_MS = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 
-function labelsKey(labels) {
-  return Object.entries(labels).sort(([a], [b]) => (a < b ? -1 : 1))
-    .map(([k, v]) => `${k}="${v}"`).join(",");
+// Prometheus text format escapes backslash, double-quote and newline inside
+// label values — without this, a crafted route string could inject fake
+// series into the exposition.
+function escapeLabelValue(v) {
+  return String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
 }
 
-class Counter {
+function labelsKey(labels) {
+  return Object.entries(labels).sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([k, v]) => `${k}="${escapeLabelValue(v)}"`).join(",");
+}
+
+export class Counter {
   constructor(name, help) {
     this.name = name;
     this.help = help;
@@ -32,7 +39,7 @@ class Counter {
   }
 }
 
-class Histogram {
+export class Histogram {
   constructor(name, help) {
     this.name = name;
     this.help = help;
@@ -65,7 +72,7 @@ class Histogram {
   }
 }
 
-class Gauge {
+export class Gauge {
   constructor(name, help) {
     this.name = name;
     this.help = help;

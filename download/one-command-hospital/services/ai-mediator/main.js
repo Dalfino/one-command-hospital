@@ -18,6 +18,7 @@ import express from "express";
 import { randomUUID } from "node:crypto";
 import { authMode, fhirHeaders } from "./medplum-auth.js";
 import { audit, verifyChain, auditPath } from "./audit.js";
+import { logEvent, newRequestId, questionHash } from "./logging.js";
 import {
   REQUESTS, DURATION, REFUSALS, UNGROUNDED,
   SIGNOFFS, AUDIT_EVENTS, AUDIT_VERIFY_FAILURES, AUDIT_RECORDS, renderMetrics,
@@ -69,13 +70,25 @@ function metricsTrail(route) {
   };
 }
 
+/** Trace middleware: one X-Request-ID per clinical question. The mediator
+ *  mints the ROOT id and every downstream hop (deid, rag, verifier, FHIR)
+ *  receives it as a header — one request, one greppable trace across services. */
+app.use((req, res, next) => {
+  req.id = req.headers["x-request-id"] || newRequestId();
+  res.setHeader("X-Request-ID", req.id);
+  next();
+});
+
 app.use(securityHeaders);
 app.use(rateLimit);
 
-async function postJson(url, body) {
+async function postJson(url, body, requestId = null) {
   const r = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(requestId ? { "X-Request-ID": requestId } : {}),
+    },
     body: JSON.stringify(body),
   });
   if (!r.ok) throw new Error(`${url} → ${r.status}`);
@@ -107,25 +120,33 @@ app.post("/process", async (req, res) => {
 
   try {
     // 1. De-ID the QUESTION itself — a typed narrative can carry identifiers.
-    const deidQ = await postJson(DEID_URL, { text: question });
+    const deidQ = await postJson(DEID_URL, { text: question }, req.id);
     const scrubbedQuestion = deidQ.anonymized;
 
     // 2. De-ID any note context BEFORE it may reach the LLM path.
     let scrubbedContext = "";
     let deidMeta = { question_findings: deidQ.finding_count };
     if (contextText) {
-      const deid = await postJson(DEID_URL, { text: contextText });
+      const deid = await postJson(DEID_URL, { text: contextText }, req.id);
       scrubbedContext = deid.anonymized;
       deidMeta.context_findings = deid.finding_count;
     }
 
     // 3. Ask the guideline RAG service (citations forced inside).
-    const rag = await postJson(RAG_URL, { question: scrubbedQuestion });
+    const rag = await postJson(RAG_URL, { question: scrubbedQuestion }, req.id);
     if (rag.refusal) REFUSALS.inc({ route: "/process", reason: rag.refusal_reason || "unspecified" });
 
     // 4. Verify grounding (Phase 1: medspaCy ConText replaces heuristics).
-    let verification = { grounded: true, notes: ["verifier skipped (refusal path)"] };
-    if (!rag.refusal && rag.citations?.length) {
+    let verification;
+    if (rag.refusal) {
+      verification = { grounded: true, notes: ["verifier skipped (refusal)"] };
+    } else if (!(rag.citations || []).length) {
+      // HARD RULE (regression-guarded by tests/integration): an answer with
+      // zero citations is ungrounded by definition. It must be flagged for
+      // human review — never passed to the EHR as if it were verified.
+      verification = { grounded: false, notes: ["answer carried no citations — flagged for review"] };
+      UNGROUNDED.inc({ route: "/process", note: "no citations" });
+    } else {
       try {
         verification = await postJson(VERIFY_URL, {
           answer: rag.answer,
@@ -134,10 +155,10 @@ app.post("/process", async (req, res) => {
             section: c.section,
             text: c.title,
           })),
-        });
+        }, req.id);
         if (!verification.grounded) UNGROUNDED.inc({ route: "/process" });
       } catch {
-        // verifier down → mark for review, never silently pass
+        // verifier down → fail CLOSED: flag for review, never silently pass
         verification = { grounded: false, notes: ["verifier unreachable"] };
         UNGROUNDED.inc({ route: "/process", note: "verifier unreachable" });
       }
@@ -187,7 +208,10 @@ app.post("/process", async (req, res) => {
     try {
       const r = await fetch(`${MEDPLUM_FHIR_URL}/Communication`, {
         method: "POST",
-        headers: await fhirHeaders(),
+        headers: {
+          ...(await fhirHeaders()),
+          "X-Request-ID": req.id,
+        },
         body: JSON.stringify(communication),
       });
       if (authMode() === "unauthenticated-v0") fhir.warning = "sandbox: unauthenticated writeback";
@@ -209,10 +233,23 @@ app.post("/process", async (req, res) => {
     });
     AUDIT_EVENTS.inc({ route: "/process", action: "answer" });
 
+    logEvent("ai-mediator", "answer", {
+      question_sha: questionHash(scrubbedQuestion),
+      question_chars: question.length,
+      refusal: rag.refusal,
+      grounded: verification.grounded,
+      citations: (rag.citations || []).length,
+      fhir_written: fhir.written,
+      audit_seq: record.seq,
+      total_latency_ms: Date.now() - started,
+    }, { requestId: req.id });
+
     res.json({ communication, fhir, audit_seq: record.seq, total_latency_ms: Date.now() - started });
   } catch (e) {
     audit(userId, "answer_error", { error: String(e.message) });
     AUDIT_EVENTS.inc({ route: "/process", action: "answer_error" });
+    logEvent("ai-mediator", "answer_error", { error: String(e.message) },
+             { level: "error", requestId: req.id });
     res.status(502).json({ error: String(e.message), stage: "pipeline" });
   }
 });

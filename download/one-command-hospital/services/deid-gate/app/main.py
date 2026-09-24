@@ -18,7 +18,7 @@ from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
 from presidio_anonymizer.entities import OperatorConfig
 
-from .hardening import Counter, Histogram, install
+from .hardening import Counter, Histogram, install, json_log, request_id_of, text_sha
 
 app = FastAPI(title="deid-gate", version="0.2.0")
 
@@ -81,6 +81,10 @@ def deid(req: DeidRequest):
     ]
     FINDINGS.inc({"route": "/deid"}, len(findings))
     TEXT_LEN.observe({"route": "/deid"}, len(req.text))
+    # Log the SHA of the input, never the input itself.
+    json_log("deid-gate", "deid", request_id=request_id_of(),
+             text_sha=text_sha(req.text), findings=len(findings),
+             chars=len(req.text))
     return DeidResponse(anonymized=out.text, findings=findings, finding_count=len(findings))
 
 

@@ -1,0 +1,107 @@
+name: one-command-hospital-tests
+
+# Minimal clinical-pipeline stack for the integration tier: the four AI
+# services only (no EHR/spine — the mediator degrades gracefully without
+# Medplum, which the tests assert). Mock-LLM mode = guideline-rag's honest
+# extractive fallback (vLLM unreachable → citation-prefixed extractive answer),
+# so the FULL de-id → retrieval → verify → audit chain runs with zero GPUs.
+#
+#   docker compose -f tests/integration/docker-compose.test.yml up -d --build
+#   pytest tests/integration -m integration
+#   docker compose -f tests/integration/docker-compose.test.yml down -v
+
+networks:
+  hospital:
+    driver: bridge
+
+volumes:
+  test-audit:
+
+x-ai-hardening: &ai-hardening
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
+  read_only: true
+  tmpfs: ["/tmp:size=64m,mode=1777"]
+  deploy:
+    resources:
+      limits:
+        cpus: "1.0"
+        memory: 1g
+
+services:
+  deid-gate:
+    <<: *ai-hardening
+    build: ../../services/deid-gate
+    ports: ["8210:8000"]
+    environment:
+      RATE_LIMIT_RPS: "50"
+      RATE_LIMIT_BURST: "100"
+    networks: [hospital]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  guideline-rag:
+    <<: *ai-hardening
+    build: ../../services/guideline-rag
+    ports: ["8211:8000"]
+    volumes:
+      - ../../guidelines:/app/guidelines:ro
+    environment:
+      LLM_BASE_URL: http://localhost:1/v1   # deliberately unreachable → extractive mock mode
+      RATE_LIMIT_RPS: "50"
+      RATE_LIMIT_BURST: "100"
+    networks: [hospital]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  verifier:
+    <<: *ai-hardening
+    build: ../../services/verifier
+    ports: ["8212:8000"]
+    environment:
+      RATE_LIMIT_RPS: "50"
+      RATE_LIMIT_BURST: "100"
+    networks: [hospital]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  ai-mediator:
+    <<: *ai-hardening
+    build: ../../services/ai-mediator
+    depends_on:
+      deid-gate:
+        condition: service_healthy
+      guideline-rag:
+        condition: service_healthy
+      verifier:
+        condition: service_healthy
+    ports: ["8213:3000"]
+    volumes:
+      - test-audit:/app/audit
+    environment:
+      DEID_URL: http://deid-gate:8000/deid
+      RAG_URL: http://guideline-rag:8000/answer
+      VERIFY_URL: http://verifier:8000/verify
+      MEDPLUM_FHIR_URL: http://localhost:9/fhir   # unreachable → fhir.written=false path
+      RATE_LIMIT_RPS: "50"
+      RATE_LIMIT_BURST: "100"
+    networks: [hospital]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s

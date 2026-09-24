@@ -20,7 +20,7 @@ from typing import List
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from .hardening import Counter, Gauge, install
+from .hardening import Counter, Gauge, install, json_log, request_id_of, text_sha
 
 app = FastAPI(title="verifier", version="0.3.0")
 
@@ -160,6 +160,11 @@ def verify(req: VerifyRequest):
     grounded = (not invalid) and grounding >= 0.45 and not conflicts
     if not grounded:
         UNGROUNDED.inc({"route": "/verify"})
+
+    json_log("verifier", "verify", request_id=request_id_of(),
+             answer_sha=text_sha(req.answer), grounded=grounded,
+             grounding_score=round(grounding, 3), invalid=len(invalid),
+             conflicts=len(conflicts), engine=engine)
 
     return VerifyResponse(
         grounded=grounded,

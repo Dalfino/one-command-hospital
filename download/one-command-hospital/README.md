@@ -1,14 +1,16 @@
-# One-Command Hospital — Guideline Copilot (v0 scaffold)
+# One-Command Hospital — Guideline Copilot (v0.4.0)
 
 A clinician asks a protocol question **inside the EHR** and gets a cited answer from the
 hospital's own guidelines — or an honest refusal. Zero PHI reaches the AI. One GPU. One command.
 
-> **Status: Phase 1 complete — hardening wave landed (M7–M11).** SMART widget,
-> Medplum Bot JWT auth, ConText verifier, hybrid retrieval, 3-protocol corpus.
-> Eval: **208 questions** — 98% retrieval on the 52-question seed, **95% on the full
-> 208-question set** (CI gate: ≥80%). Security: container hardening, rate limits,
-> hash-chained audit trail. Governance: model card, readiness gates, incident
-> runbook. **NOT cleared for clinical deployment — see docs/deployment_readiness.md.**
+> **Status: v0.4.0 — commercial-standard + clinical-ready testing wave landed (M12–M16).**
+> **Test pyramid: 37 unit + 17 node tests green in-repo; docker integration tier (golden path,
+> fail-closed, PHI white-out) + GPU live tier wired into CI.** Structured JSON logs with PHI
+> redaction + X-Request-ID tracing across all services. Edge TLS (`make edge-up`), verified
+> backup/restore drills, locust load test vs kill-criteria SLOs. CHANGELOG / CONTRIBUTING /
+> SECURITY / LICENSE / OpenAPI contract / SBOM register. Eval: **208 questions** — seed **98%**,
+> full **95%** (CI gate ≥80%). Three real bugs found and fixed by the new tests (see
+> tests/README.md). **NOT cleared for clinical deployment — see docs/deployment_readiness.md.**
 
 ## The 60-second version
 
@@ -109,6 +111,7 @@ docs/              architecture.md, improvements.md
 1. **Phase 0 (done):** stack up, eval harness green, synthetic hospital populated.
 2. **Phase 1 (complete):** SMART widget ✅ · Bot JWT auth ✅ · ConText verifier ✅ ·
    hybrid retrieval ✅ · eval 208 questions ✅ · hardening wave M7–M11 ✅ ·
+   test pyramid + CI integration gate M12–M16 ✅ ·
    OpenHIM registration ⬜ · live-mode trap-refusal gate ⬜.
 3. **Phase 2:** real hospital protocols + steward sign-off, live-mode eval, TLS +
    pen test, Orthanc + OHIF imaging layer, MedGemma pre-read (Recipe B).
@@ -130,6 +133,11 @@ docs/              architecture.md, improvements.md
 | M9 | observability | `make observe` — Prometheus + 7 alert rules (refusal fatigue, ungrounded, audit-chain) + Grafana dashboard |
 | M10 | accuracy | Eval 52 → **208** (seed 98%, full **95%**), ambiguity-margin gate, trap sanity probe |
 | M11 | ops | `make doctor` preflight, CI workflow (eval gates + secret scan), TTL answer cache, vLLM prefix caching, Dockerfile fixes |
+| M12 | testing | **Test pyramid**: 37 unit + 17 node tests; docker integration tier (golden path, fail-closed, PHI white-out) + GPU live tier; mock-LLM mode. **Found + fixed: rag corpus path (never booted), ungrounded answers passing silently, fallback losing citations** |
+| M13 | tracing | Structured JSON logs (PHI-redacting) + `X-Request-ID` root trace minted by mediator, propagated deid→rag→verifier→FHIR |
+| M14 | edge/ops | Caddy TLS profile (`make edge-up` :8443), verified backup/restore drills (audit ledger included), locust load test vs kill-criteria SLOs |
+| M15 | hygiene | CHANGELOG, CONTRIBUTING, SECURITY policy, Apache-2.0 LICENSE, OpenAPI 3.1 contract, SBOM + license register, CI: node tests + docker integration job |
+| M16 | sync | README/portal truth sync, v0.4.0, worklog |
 
 ## Licensing note
 

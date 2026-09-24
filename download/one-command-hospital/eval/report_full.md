@@ -1,5 +1,5 @@
 # Eval report
-- generated: 2026-09-24 01:25:22
+- generated: 2026-09-24 04:32:29
 - mode: retrieval-only | bm25: True
 - answerable: 153 | retrieval hits: 146 (95%)
 

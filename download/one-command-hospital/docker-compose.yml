@@ -21,6 +21,8 @@ volumes:
   audit-data:            # hash-chained audit trail (ai-mediator)
   prom-data:
   grafana-data:
+  edge-data:             # TLS certs/keys (caddy internal CA in sandbox)
+  edge-config:
 
 x-ai-hardening: &ai-hardening
   restart: unless-stopped
@@ -304,6 +306,24 @@ services:
     volumes:
       - ./data/synthea:/work/output
     command: ["-p", "${SYNTHEA_POPULATION:-100}"]
+    networks: [hospital]
+
+  # ─────────────── Edge TLS (profile: edge) — make edge-up ───────────────
+  # Caddy terminates TLS for the SMART widget + mediator API. Sandbox uses an
+  # internal CA; production swaps in real certs (edge/README.md, checklist T-1).
+  edge:
+    profiles: ["edge"]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - ai-mediator
+    ports: ["8443:8443"]
+    volumes:
+      - ./edge/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./smart-app/dist:/srv/widget:ro
+      - edge-data:/data
+      - edge-config:/config
+    security_opt: ["no-new-privileges:true"]
     networks: [hospital]
 
   # ─────────────────── Observability (profile: observe) ───────────────────

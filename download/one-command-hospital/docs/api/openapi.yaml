@@ -1,0 +1,157 @@
+openapi: 3.1.0
+info:
+  title: AI Mediator API — Guideline Copilot
+  version: 0.4.0
+  description: |
+    The ONE contract every future AI capability rides on: clinical question in,
+    cited-and-verified (or refused) answer out, tamper-evident audit + FHIR
+    writeback with provenance, human sign-off loop.
+
+    Safety contracts embedded in this API (breaking them is a Class B change
+    under docs/governance.md):
+      - Questions are de-identified server-side before any model path.
+      - Answers carry edition-stamped citations or the exact refusal marker
+        NOT_COVERED.
+      - A missing citation or an unreachable verifier marks grounding=false.
+      - Every answer/audit event carries an X-Request-ID trace id.
+servers:
+  - url: http://localhost:8103
+    description: sandbox compose (plaintext, inside lab)
+  - url: https://localhost:8443/api
+    description: sandbox edge TLS terminator (make edge-up)
+paths:
+  /health:
+    get:
+      summary: Liveness + auth mode
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  service: { type: string, const: ai-mediator }
+                  auth: { type: string, enum: [unauthenticated-v0, medplum-bot] }
+  /process:
+    post:
+      summary: Ask the Guideline Copilot
+      operationId: processQuestion
+      parameters:
+        - in: header
+          name: X-Request-ID
+          required: false
+          description: Caller trace id; minted server-side when absent.
+          schema: { type: string, maxLength: 64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question:
+                  type: string
+                  description: Clinical question. May contain narrative; it is
+                    de-identified server-side before reaching any model.
+                  maxLength: 100000
+                contextText:
+                  type: string
+                  description: Optional note context; de-identified like the question.
+                patientId:
+                  type: [string, "null"]
+                  description: FHIR Patient id for Communication.subject (id only).
+                userId:
+                  type: string
+                  default: unknown
+                  description: Requesting clinician id — audit actor.
+      responses:
+        "200":
+          description: |
+            Answer (or refusal) with full provenance. Component failure
+            mid-pipeline marks grounding=false and human_action=pending_review
+            — the answer is never presented as verified when it is not.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessResponse"
+        "400": { description: Missing question }
+        "429": { description: Rate limit exceeded }
+        "502": { description: Pipeline failure before any answer could form }
+  /signoff:
+    post:
+      summary: Clinician closes the human_action loop
+      operationId: signoffCommunication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [communicationId, action]
+              properties:
+                communicationId: { type: string }
+                action: { type: string, enum: [signed_off, escalated] }
+                by: { type: string, default: clinician }
+      responses:
+        "200":
+          description: Sign-off recorded (ok may be false if FHIR write failed)
+        "400": { description: Missing/invalid fields }
+        "404": { description: Communication not found in the FHIR spine }
+        "502": { description: FHIR spine unreachable }
+  /audit/verify:
+    get:
+      summary: Walk the hash-chained audit ledger
+      operationId: verifyAudit
+      responses:
+        "200":
+          description: |
+            ok=false means tampering or a torn write — treat as SEV-2 per
+            docs/governance.md. Alert `AuditChainBroken` fires on this.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  records: { type: integer }
+                  first_bad_seq: { type: [integer, "null"] }
+                  reason: { type: [string, "null"] }
+                  file: { type: string }
+  /metrics:
+    get:
+      summary: Prometheus exposition
+      operationId: getMetrics
+      responses:
+        "200":
+          description: text/plain; version=0.0.4
+components:
+  schemas:
+    Citation:
+      type: object
+      required: [corpus_id, section, edition, title]
+      properties:
+        corpus_id: { type: string, example: ANTICOAG-BRIDGE }
+        section: { type: string, example: "3" }
+        edition: { type: string, example: v3.0 }
+        title: { type: string }
+    ProcessResponse:
+      type: object
+      properties:
+        communication:
+          type: object
+          description: FHIR Communication resource (payload[0].contentString is
+            the de-identified provenance envelope).
+        fhir:
+          type: object
+          properties:
+            written: { type: boolean }
+            status: { type: integer }
+            warning: { type: string }
+        audit_seq:
+          type: integer
+          description: Sequence number of the audit record for this answer.
+        total_latency_ms: { type: integer }
