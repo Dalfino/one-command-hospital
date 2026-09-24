@@ -1,0 +1,206 @@
+     1→# Multi-Agent Worklog
+     2→
+     3→---
+     4→Task ID: 1
+     5→Agent: main (Super Z)
+     6→Task: Clarify requirements + deep research for Hospital AI Suite (portal + PDF whitepaper)
+     7→
+     8→Work Log:
+     9→- AskUserQuestion completed. Locked brief: portal + PDF; audience = clinical operations; all 6 modules included; warm-care style with "alive" animated experience; deep research on all 8 projects then improvise all of them; compliance gets deepest treatment.
+    10→- Loaded skills: web-search, fullstack-dev, pdf.
+    11→- Initialized fullstack env (Next.js 16 + shadcn/ui scaffold at /home/z/my-project).
+    12→- Ran 3 research batches (scripts/research_batch1-3.sh) → 21 JSON files in /home/z/my-project/research/.
+    13→
+    14→Stage Summary:
+    15→- KEY RESEARCH FINDINGS:
+    16→  * MedGemma 1.5 (Apr 2026): Gemma-3 based 4B multimodal (SigLIP encoder: CXR, CT/MRI, histopath, derm) + 27B text; +5% MedQA, +22% EHRQA vs v1; Google expects fine-tuning; Gemma Terms of Use = free commercial but with use restrictions, derivatives inherit terms.
+    17→  * BioMistral-7B: Apache-2.0, continued-pretrain of Mistral-7B-Instruct on PubMed Central, ~51.5% avg on 10 med-QA benchmarks; BioMistral-NLU (2025) extension exists; EU-hostable.
+    18→  * Meditron (EPFL): 7B/70B on Llama-2 (Community License); trained on clinical guidelines (WHO/NHS) + PubMed + MIMIC; "Fully Open Meditron" (May 2026) = first fully auditable LLM-CDSS pipeline w/ clinician-audited corpus.
+    19→  * BioGPT (Microsoft): MIT license; 346M/Large; SOTA BC5CDR, KD-DTI, DDI relation extraction; 78.2% PubMedQA; narrow but excellent research-mining tool.
+    20→  * medspaCy: MIT; ConText (negation/family/uncertainty/experiencer), section detection, hybrid rule+stat; JAMA-recognized (Eyre 2022).
+    21→  * scispaCy (AllenAI): NER (bc5cdr etc.) + UMLS/MeSH/RxNorm entity linking + abbreviation detection.
+    22→  * OpenBioLLM-8B: Llama-3 Community License; 72.5% avg on 9 biomedical benchmarks (> GPT-3.5, Meditron-70B; 70B variant 86.1%); DPO-tuned.
+    23→  * Clinical-Longformer: 4096-token sparse attention, MIMIC-III pretrain, beats ClinicalBERT on long-doc tasks. Clinical-T5: 4 models on MIMIC-III+IV (PhysioNet credentialed access - compliance nuance). 2025 PLOS study: ClinicalT5 embeddings + structured EHR → 30-day readmission.
+    24→  * HIPAA: 4 routes for PHI+LLM (BAA cloud / dedicated / self-hosted open weights / on-prem GPU); de-ID: Safe Harbor 18 identifiers, Philter/CliniDeID, open-source targets >95% recall; HHS guidance Feb 2025.
+    25→  * EU AI Act 2024/1689: AI medical devices = high-risk (Annex III); core obligations enforceable Aug 2026 (conformity assessment, tech docs, human oversight, logging, data governance).
+    26→  * FDA: Dec 2024 final PCCP guidance; Jan 2025 draft AI lifecycle guidance; 1,016 AI-ML devices approved thru 2024.
+    27→  * Deployment: 7B → 1×24GB GPU; 70B → 2-4×80GB; vLLM/NIM serving; quantization 4-bit.
+    28→  * ROI evidence: ambient scribes cut burnout 51.9%→38.8% in 30 days (JAMA 2025); 20-30% documentation time reduction; commercial scribes cost $2,500-$7,200/clinician/yr (Abridge/DAX) → open-stack TCO contrast.
+    29→  * Governance: AI governance committee w/ clinical validation + data governance + MLOps subgroups is the accepted pattern.
+    30→- PLATFORM CONCEPT (to build): "Willow Health AI Suite" — 4-layer open clinical AI platform: (1) Trust Fabric [Willow Sentinel: de-ID gate, guardrails, audit, model registry], (2) Intelligence Layer [fine-tuned MedGemma + BioMistral+RAG + encoder pipeline], (3) Data/Integration [FHIR gateway, SMART on FHIR], (4) Experience [6 product lines]: Writer, Sage, Charts, Pulse, Triage, Sentinel.
+    31→
+    32→---
+    33→Task ID: 6
+    34→Agent: full-stack-developer
+    35→Task: Build the Willow Health AI Suite front-end — animated, warm-care-styled single-page Next.js 16 portal for clinical operations teams (route / only).
+    36→
+    37→Work Log:
+    38→- Ran init-fullstack script; verified scaffold (Next.js 16 + Tailwind 4 + shadcn/ui, framer-motion 12 already present — no installs needed).
+    39→- Design system: wired Fraunces (display serif) + Nunito Sans (body) via next/font/google into CSS vars --font-fraunces/--font-nunito; added Tailwind 4 @theme tokens: cream #FAF7F2, sand #F4EDE4, pine #1E5C4F, forest #2D6A4F, sage #95B8A2, sage-light #DFEBDD, terracotta #D97742, amber-warm #D4A373, ink #4A4440. Zero blue/indigo classes (grep-verified; only false-positive "translate→slate" matches).
+    40→- ALIVE layer implemented in globals.css keyframes + framer-motion:
+    41→  * 4 drifting ambient blobs (20-40s loops, blur-3xl, sage/terracotta/amber/forest 15-45% opacity) in hero + footer CTA band
+    42→  * Brand-signature animated ECG trace: generated SVG QRS path (8 repeating units) with green 5s traveling dash + terracotta 9s secondary pulse (stroke-dashoffset keyframes, pathLength=100)
+    43→  * 8 floating medical particles (plus/dot/leaf) with per-item 8-16s float loops
+    44→  * Scroll-reveal via reusable <Reveal> (whileInView fade+rise, staggered delays), counters via <AnimatedCounter> (rAF, cubic ease, useInView once, useReducedMotion-aware): 51.9→38.8%, 0→30%, 0→7.2k, 0→1,016
+    45→  * Card hover: whileHover y:-4 spring + shadow bloom + terracotta border glow + icon micro-rotate/scale
+    46→  * Pulsing "always-on" dot on Trust Fabric layer + hero badge; animated connector drop-dots between stack layers; heartbeat-scale logo mark in nav
+    47→  * IdleIcon wrapper: 3-6s y-oscillation/sway on lucide icons in cards (staggered durations)
+    48→  * prefers-reduced-motion: global CSS kill-switch + framer useReducedMotion gates (no movement, counters jump to final value)
+    49→- Sections built (src/components/willow/*, composed in page.tsx): sticky glassmorphism nav (cream/70 backdrop-blur, Sheet hamburger w/ 7 links + CTA), Hero (badge chip, H1, subhead, 2 CTAs, 3 floating stat chips 6/8/100%, ECG), Why Now (4 cited counter cards), Platform (4-layer expandable stack, Trust Fabric highlighted + pulsing, governance tagline), Products (6 cards w/ built-from badges, bullets, KPI chips), Sources (8 keep/add cards, origin+license chips, license footnote), Compliance (4 shadcn Tabs w/ 6 animated checklist rows each), Deployment (reference stack list, GPU sizing table w/ min-w-[560px] internal scroll, 3 scenario cards), ROI (animated 100% vs 20% cost bars, 12-20mo payback card, 4 benefit chips), Roadmap (4-phase timeline, animated scaleX progress line desktop / vertical line mobile, gate chips), Risks (8-row table w/ Low/Med/High/Critical badges), Footer (pine CTA band + built-on line + disclaimer, mt-auto sticky footer).
+    50→- Lint: `bun run lint` clean (exit 0). Fixed en route: unused StatCard delay prop, unused PulsingDot import.
+    51→- Runtime bug found & fixed via browser: on 375px viewport the deployment grid caused +325px horizontal overflow (grid item min-width:auto inflated by GPU table min-content). Fix: min-w-0 on grid Reveal wrappers + min-w-[560px] on table inside overflow-x-auto → overflowX now 0, table scrolls internally.
+    52→- agent-browser verification (desktop 1366px + mobile 375px): title correct, zero console errors / zero page errors; all 9 anchored sections present; nav anchor click lands at scroll-mt 80px exactly; compliance tabs switch (EU AI Act / FDA verified: active state + 6 items each); platform layer 4 expand/collapse works (5 badges); counters reach 38.8 / 1,016 / 7.2 after inView animation; mobile hamburger opens Sheet (7 links), link click closes sheet + navigates (#compliance top=80px); footer bottom == document bottom (sticky-footer compliant); ECG/blobs/particles all mounted; VLM inspection of full-page desktop + mobile screenshots: "NO ISSUES".
+    53→- Final GET / → HTTP 200; dev.log clean (only a transient module-not-found during mid-write file creation, resolved; subsequent compiles clean).
+    54→
+    55→Stage Summary:
+    56→- Portal front-end COMPLETE at route /: 12 willow components + data module, warm-care palette, full ALIVE animation system, responsive mobile-first, accessible (semantic landmarks, aria-expanded/controls, labelled sections, 44px touch targets, sr-safe tables), sticky footer.
+    57→- Fonts (Fraunces/Nunito Sans), palette tokens, keyframes live in globals.css/layout.tsx for reuse by later agents (e.g., PDF whitepaper should match #FAF7F2/#1E5C4F/#D97742).
+    58→- No deviations from spec; all 11 sections + nav/footer delivered; only addition is the mobile GPU-table internal scroll needed to kill overflow.
+    59→
+    60→---
+    61→Task ID: 5,7,8 (main agent)
+    62→Task: PDF whitepaper production (outline, skill chain, build, QA)
+    63→
+    64→Work Log:
+    65→- Set 14-section outline via Outline tool; output chapter numbering map (Exec Summary unnumbered, Ch1-10, References unnumbered).
+    66→- Read full pdf skill chain: report.md (all 1704 lines), fonts.md, palette.md, cover.md, cover-backgrounds.md, charts.md, overflow.md, pagination.md, typography.md, fill-engine.md, geometry.md.
+    67→- Generated cascade palette: intent=nature, monochrome, seed=7 (green family; header_fill #456454, accent #298959).
+    68→- Built Playwright+CSS diagrams (4-layer architecture, FHIR round trip) at 2x scale; matplotlib ROI horizontal bar chart per charts.md.
+    69→- Cover: Template 01 HUD, light bg, cascade CSS vars; fixed validator-flagged nested-span overlap; poster_validate PASS, cover_validate PASS; rendered via html2poster.js --width 794px.
+    70→- Body: ReportLab TocDocTemplate + multiBuild, FreeSerif + install_font_fallback, roman TOC numbering + arabic body reset, CondPageBreak orphan control, safe_keep_together, Paragraph-wrapped tables with ratio colWidths.
+    71→- Fixed 3 bugs found by inspection/QA: heading double-append in flush logic, body_start_page stale across multiBuild passes, caption/callout tuple indexing (captions dropped, callout rendered '5').
+    72→- QA chain: code.sanitize, meta.brand, pages.clean (0 blank), font.check (0 issues), toc.check (pass), pdf_qa.py --skip-cover: PASS (fixed cover page-size mismatch via 0.1pt normalize threshold).
+    73→
+    74→Stage Summary:
+    75→- FINAL: /home/z/my-project/download/Willow_Health_AI_Suite_Whitepaper.pdf (23 pages, ~544 KB, vector, cover+TOC+10 chapters+18 references)
+    76→- Cover HTML source delivered at /home/z/my-project/download/Willow_Whitepaper_Cover.html
+    77→- Assets/scripts persisted under /home/z/my-project/scripts/ (diagram_arch.html, diagram_fhir.html, gen_chart.py, gen_body.py, wp_content_a/b.py, merge_final.py)
+    78→
+    79→---
+    80→Task ID: 9 (main agent)
+    81→Task: Strategy pivot + scaffold the "One-Command Hospital — Guideline Copilot" flagship project
+    82→
+    83→Work Log:
+    84→- Strategy evolved across user exchanges: improvising all repos rejected → independent-research framing → infra repos (#29-38) reviewed → 50-project list absorbed → ONE project locked: Guideline Copilot on the One-Command Hospital (OpenEMR sandbox, Medplum spine, OpenHIM bus, Presidio de-ID, BioMistral-7B vLLM, Meditron corpus as KB, medspaCy/scispaCy verifier, Synthea patients, HAPI conformance CI).
+    85→- Scaffolded /home/z/my-project/download/one-command-hospital/: README, docker-compose.yml (10 services + gpu/patients/conformance profiles), .env.example, Makefile, .gitignore.
+    86→- Knowledge base: guidelines/manifest.yaml (edition/expiry tracking = improvement #2) + 2 SYNTHETIC seed protocols (anticoagulation bridging v3.0, sepsis screening ed.2) with numbered sections.
+    87→- Eval harness: eval/qa_seed.yaml (24 pairs: 20 traced + 4 refusal traps) + run_eval.py (BM25 retrieval scoring, optional full-mode vs live RAG, CI gate at 80%, report.md). Fixed typo (f-"-) and refusal-trap grading bug en route.
+    88→- Services: deid-gate (FastAPI+Presidio), guideline-rag (BM25 → citation-forced prompt → vLLM, NOT_COVERED refusal, edition-stamped citations, extractive fallback), verifier (heuristic grounding/negation v0, ConText in Phase 1), ai-mediator (Node/Express: deid→RAG→verify→FHIR Communication with provenance + human_action).
+    89→- Stubs: smart-app/README (SMART on FHIR widget, Phase 1), tools/synthea/Dockerfile (two-stage Maven build, output to ./data/synthea).
+    90→- Docs: architecture.md (request lifecycle, safety layers, KILL CRITERIA, ops notes) + improvements.md (6 improvements with verify steps).
+    91→- Validated: py_compile all Python OK, YAML OK, eval green: 18/20 retrieval hits (90%, BM25 on; a03/s01 genuine misses → Phase 1 vector retrieval), CI gate passed.
+    92→
+    93→Stage Summary:
+    94→- FLAGSHIP SCAFFOLD COMPLETE + PROVEN: eval harness runs green in retrieval-only mode (90%).
+    95→- The six improvements are implemented or stubbed with verify paths; compose file is the "one command" artifact.
+    96→- Prior deliverables (Willow portal at / route, whitepaper PDF) reflect the OLD all-8-improvise strategy — superseded by this architecture; portal/whitepaper need a content refresh pass to match the new one-project focus (pending user go-ahead).
+    97→- Next: Phase 1 (SMART widget, Bot JWT auth, medspaCy ConText verifier, vector retrieval, 200-question eval), then portal+whitepaper refresh.
+    98→
+    99→---
+   100→Task ID: 11 (main agent)
+   101→Task: Phase 1 build + GitHub repo (Dalfino/one-command-hospital) with milestone pushes + portal refresh integration
+   102→
+   103→Work Log:
+   104→- Created repo via API; PAT verified (login: Dalfino). Token used inline only (never in .git/config or files); grep-checked before every push (clean).
+   105→- Git auth note: `x-access-token:` prefix rejected; `https://Dalfino:<PAT>@github.com/...` works for this fine-grained PAT.
+   106→- M0 `b8aea4d`: v0 scaffold pushed (compose stack, corpus, eval 18/20, 4 services).
+   107→- M1 `0a109b8`: SMART widget — Vite+React+fhirclient, warm-care UI, ask/sign/escalate. Fixed PostCSS parent-lookup (inline css.postcss config) + duplicated button; vite build GREEN.
+   108→- M2 `11bbaa2`: medplum-auth.js (OAuth2 client_credentials + JWT client_assertion RS384, token cache) + /signoff endpoint closing human_action loop; node --check green.
+   109→- M3 `ce51fea`: verifier v0.2 — medspaCy ConText polarity map (answer vs source), conflicts flagged, heuristic fallback, engine in /health.
+   110→- M4 `406d6d8`: retrieval.py HybridRetriever (alpha·norm(BM25)+(1−α)·cosine, VECTOR_BACKEND/HYBRID_ALPHA envs, honest degradation) + title-boosted chunks + Dockerfile WITH_SBERT ARG. Fixed relative import + comprehension bug pre-push.
+   111→- M5 `2c05ca2`: GLYCEMIC-CTRL v1.0 protocol + eval to 52 pairs (42 traced + 10 refusal traps, incl. paraphrase items) + eval loader sync → 98% retrieval (41/42, BM25; misses a10/g02 borderline), CI gate green.
+   112→- M6 `f234d29`: portal copied to portal/ (rsync minus node_modules/.next/db/prisma etc.) + portal/README + README status/milestones. `09b92ec` docs fix.
+   113→- Portal refresh (Task 10, full-stack-developer subagent): content rewritten to flagship story — hero "librarian robot", how-it-works 7-hop lifecycle, combination (10 repos), 6 improvements, proof+kill criteria, compliance open-items, deployment, roadmap; lint exit 0; agent-browser 1366px+375px: 0 overflow, 0 console errors, counters/tabs/expanders verified; obsolete components removed; metadata retitled ("a Willow Lab research build").
+   114→- Whitepaper refresh NOT started this turn (pdf skill chain + script surgery needs its own focused pass) — scheduled next.
+   115→
+   116→Stage Summary:
+   117→- REPO LIVE: github.com/Dalfino/one-command-hospital, 8 commits M0-M6 + docs fix, every milestone pushed as requested.
+   118→- Phase 1 core landed: SMART widget (build green), JWT auth, ConText verifier, hybrid retrieval, 52-pair eval @ 98%.
+   119→- Portal (workspace Next.js app at /) now tells the new story and is verified; copy lives at portal/ in the repo.
+   120→- PENDING: whitepaper PDF refresh to match new architecture (next dedicated pass, using persisted scripts in /home/z/my-project/scripts/); eval 52→200; OpenEMR SMART launch registration; user advised to ROTATE the PAT shared in chat.
+   121→
+   122→---
+   123→Task ID: 10
+   124→Agent: full-stack-developer
+   125→Task: Pivot the Willow portal (route /) to the locked flagship story — "Guideline Copilot on the One-Command Hospital" — keeping the Task 6 design system, layout quality, and animation style untouched.
+   126→
+   127→Work Log:
+   128→- Read worklog + one-command-hospital repo (README, docs/architecture.md, docs/improvements.md, eval/qa_seed.yaml, eval/report.md, docker-compose.yml, Makefile, git log M1–M5) to source every number honestly: 52 pairs (42 traced + 10 refusal traps), 98% retrieval (41/42, BM25-only, eval/report.md), 80% CI floor, kill criteria (85% grounded / PHI one-strike / >8s median latency / trust <80%), ~20-min boot, 1×≥24GB GPU, port map, licenses, Phase 0 done + Phase 1 items shipped (SMART widget, Bot JWT, ConText verifier v0.2, hybrid BM25+SBERT).
+   129→- Rewrote src/components/willow/willow-data.ts as the single content module: NAV_LINKS (7 anchors), HERO_CHIPS (98% retrieval / 52-question exam / 0 PHI to AI), LIFECYCLE_STEPS (7-hop request lifecycle, de-ID gate highlighted), IMPROVEMENTS (6 cards, upstream→ours→verify), COMBINATION (10 repos with Deploy/Harvest/Component/Conformance-CI/Planned dispositions + license footnote), PROOF_METRICS + GRADED_ON + KILL_CRITERIA, COMPLIANCE_TABS (each item flagged done vs OPEN ITEM), MAKE_VERBS + COMPOSE_PROFILES + PORT_ROWS + DEPLOY_FACTS, PHASES with status chips (done/active/planned + per-bullet done checks), RISKS (8 rows aligned to kill criteria: refusal fatigue, retrieval drift, staleness, PHI, hallucination, latency, trust, licenses), REPO_URL, BUILT_ON, DISCLAIMER, FOOTER_COPY ("a Willow Lab research build").
+   130→- Components: rewrote hero.tsx (H1 "A librarian robot inside the hospital", terracotta subhead "Guideline Copilot on the One-Command Hospital", zero-PHI subhead, CTAs "Read the architecture"→#how + "View the repo"→GitHub external; chips 98%/52/0), site-nav.tsx (brand "One-Command Hospital — Guideline Copilot · a Willow Lab build", repo CTA, Sheet aria-describedby fix), why-now.tsx (2 a.m. warfarin scenario card + 3 kept industry stats re-captioned "general industry finding"), platform→how-it-works.tsx (kept expandable layer treatment + connector drop-dots; de-ID step gets terracotta pulsing "PHI dies here" chip; non-negotiables banner), products→improvements.tsx (Upstream today / Ours boxes + FlaskConical Verify chips, IdleIcons kept), sources→combination.tsx (10 repo cards with disposition chips), roi→proof.tsx (animated counters 52/98%/10/80%, make-eval strip, 4 kill-criteria cards with pulsing terracotta dots), compliance.tsx (framework+open-items legend; done=forest check, open=amber dashed circle cards), deployment.tsx (one-command code block, Makefile verbs, profile chips, port-map table with min-w-[520px] internal scroll, GPU/air-gapped/~20-min fact cards), roadmap.tsx (status chips Done/In progress/Planned, desktop progress line animates to 3/8, pulsing active node, per-bullet done checks), site-footer.tsx (pine CTA band "Run the hospital yourself" + repo + architecture buttons, GitHub link, advisory-only disclaimer); page.tsx reordered (Hero→Why→How→Combination→Improvements→Proof→Compliance→Deployment→Roadmap→Risks); layout.tsx metadata retitled "One-Command Hospital — Guideline Copilot".
+   131→- Removed obsolete platform.tsx/products.tsx/sources.tsx/roi.tsx. Kept willow-* CSS keyframes/classes and motion-primitives untouched.
+   132→- Fixed lint regression: eslint was scanning download/one-command-hospital/smart-app/dist (Task 9 Vite build artifact) and failing; added download/research/scripts/mini-services/db/tests to eslint ignores (build artifacts must not be linted). bun run lint → exit 0.
+   133→- Verification (agent-browser, desktop 1366×900 + mobile 375×812): title correct; zero console errors, zero page errors (fixed one Radix SheetContent aria-describedby warning en route); all 9 anchored sections present; nav anchor lands at exactly 80px (desktop #how; mobile #proof after Sheet close, sheet closes on nav click); horizontal overflow 0px on both viewports incl. all lifecycle steps expanded (strict per-element scan excluding intentional overflow containers); port table scrolls internally on mobile; compliance tabs switch (EU AI Act: 6 items, 3 OPEN ITEM); lifecycle expanders work (7 steps, aria-expanded toggles); proof counters animate to 52 / 98% / 10 / 80%; deployment facts + port rows (6) verified; roadmap statuses Done/In progress/Planned×2; footer bottom == document bottom on both viewports (11953/11953 desktop, 21140/21140 mobile); ambient blobs/ECG/particles mounted.
+   134→- VLM inspection of full-page screenshots (after scroll-triggering all whileInView reveals): desktop 1366 = "NO ISSUES"; mobile 375 = flagged items disproven by DOM ground truth (no overflow/clipping) except expected below-the-fold stat chips on mobile hero — accepted, matches Task 6 pattern. Screenshots at /tmp/task10-*.png, VLM script persisted at scripts/task10_vlm_check.mjs.
+   135→- dev.log: transient module-not-found only during mid-write file swaps (old page.tsx ↔ new components), resolved; final compiles clean, GET / → 200.
+   136→
+   137→Stage Summary:
+   138→- Portal now tells the locked flagship story end-to-end with design system and ALIVE animations intact; all content traceable to the one-command-hospital repo (no invented numbers; ~20-min boot explicitly labeled "pilot-stage estimate").
+   139→- Honesty treatments added: OPEN ITEM markers in compliance tabs, "general industry finding" captions on kept stats, verify chips on every improvement, kill criteria surfaced as a dedicated card row.
+   140→- Old "Willow Health AI Suite" fully retired from user-visible copy; "Willow" survives only as "a Willow Lab research build" (permitted). Files: willow-data.ts, hero, site-nav, why-now, how-it-works, improvements, combination, proof, compliance, deployment, roadmap, site-footer, page.tsx, layout.tsx, eslint.config.mjs (+ removed 4 obsolete components).
+   141→- Verification green: lint exit 0; desktop+mobile zero console/page errors, zero horizontal overflow, anchors/tabs/expanders/counters/footer-stickiness all pass.
+   142→- Note for main agent: whitepaper (download/) still carries the old suite story and is explicitly out of scope here; dist artifacts inside download/one-command-hospital/smart-app are excluded from lint via eslint.config.mjs ignores.
+   143→
+   144→---
+   145→Task ID: 12
+   146→Agent: main (Super Z)
+   147→Task: Clinical-readiness audit + hardening wave M7-M11 (user question: "is everything done and ready for clinical deployment? improvements across smoothness/efficiency/accuracy/infrastructure/security/governance?")
+   148→
+   149→Work Log:
+   150→- Audited repo state post-platform-resync: git remote lost, history rewritten locally (UUID commits); all content intact; 0-insertion permission diffs only. No PAT in env (used inline-only last session) → push pending.
+   151→- Found + fixed 2 real bugs: ai-mediator Dockerfile never COPYed medplum-auth.js (container would crash on boot); README referenced missing .env.example (created).
+   152→- M7 Security: compose network segmentation (internal `data` tier), non-root USER + cap_drop ALL + no-new-privileges + read-only rootfs on all 4 AI services, healthchecks + service_healthy gating, resource limits, per-IP token-bucket rate limits, body caps, security headers (shared zero-dep hardening.py duplicated per service by design), .env.example.
+   153→- M8 Governance: hash-chained append-only audit trail (audit.js, genesis→sha256 chain, /audit/verify + verifyChain walk), audit events on answer/signoff/error; mediator v0.3 scrubs the QUESTION text too (raw question was going to LLM path — real PHI gap); docs/governance.md (roles, change control classes, incident severity ladder, kill criteria, EU-AI-Act/FDA/HIPAA posture), docs/model_card.md, docs/security_checklist.md, docs/deployment_readiness.md (Gate 0-5 matrix with explicit NOT-READY verdict + named sign-off block).
+   154→- M9 Observability: observe profile (Prometheus :8106, Grafana :8107), prometheus.yml + alert_rules.yml (refusal fatigue >40%, ungrounded answers critical, audit-chain broken critical, p95>8s, 5xx, service down), 8-panel Grafana dashboard; /metrics on all 4 services (zero-dep text exposition, Python + Node mirrors).
+   155→- M10 Accuracy: eval/generate_eval.py (deterministic, no RNG) → qa_full.yaml 208 items (52 seed + 63 template + 21 keyword-probe + 21 navigation + 6 edition + 45 hand-verified traps); BM25 trap sanity probe flags vocabulary-overlap traps for review (lmwh-renal top, none actually covered); run_eval.py accepts file arg + separate report_full.md. RESULTS: seed 41/42 = 98%, FULL 146/153 = 95% (gate ≥80% green both).
+   156→- M11 Ops: tools/doctor.sh + `make doctor` (docker/env/ports/disk/GPU/secret-hygiene preflight), .github/workflows/ci.yml (eval gates both sets, py_compile, YAML validity, node --check, smart-app build, compose config, gitleaks), TTL+LRU answer cache in guideline-rag, RETRIEVAL_MARGIN ambiguity gate (default 0.02), vLLM --enable-prefix-caching, verifier NLP built once (was per request), Makefile targets observe/eval-full/audit-verify.
+   157→- Synced real numbers to README (status banner + milestone table M7-M11) and portal willow-data.ts (hero chips 208/95%, proof metrics 208/95%/55/80%, roadmap bullets) in workspace app + repo portal/ copy; bun run lint exit 0.
+   158→- Committed locally: 0875c1f (59 files, +3,485). PUSH PENDING: needs fresh PAT from user (old one shared in chat must be rotated); when provided, reconcile rewritten local history with GitHub M0-M6 history (prefer: re-apply M7-M11 changes on top of remote main to preserve milestone SHAs).
+   159→
+   160→Stage Summary:
+   161→- VERDICT DELIVERED: not clinically deployable (research pilot). Blocking opens: real protocols + steward sign-off, live-mode trap refusal + grounding eval (GPU), TLS + pen test, Medplum auth fail-closed, structured logs + off-box shipping, backup/restore drills, load test, regulatory counsel, committee ratification.
+   162→- Everything implementable in-sandbox landed: 5 milestones, 2 crash/security bugs fixed, eval 4x, gates/alerts/docs codified. Portal + README carry only real numbers.
+   163→
+   164→---
+   165→Task ID: 13 (main agent)
+   166→Task: "What else to make it commercial-standard quality and clinical-ready testing — let's make it happen" → M12–M16 wave (v0.4.0)
+   167→
+   168→Work Log:
+   169→- M12 test pyramid: pytest.ini (unit-only default), tests/{unit,node,integration,live}. Unit: hardening primitives (token bucket, metric render, body cap, request-id middleware via TestClient), retrieval math (BM25 ranking, minmax edges, alpha semantics with fake vector model), rag logic (cache TTL/LRU, extract_citations dedupe/manifest filter, refusal shape), logging redaction, eval-gate both directions (seed exit 0; impossible-set exit 2). Node (node:test, zero deps): audit chain genesis/tamper-first-bad-seq/torn-line/middle-deletion/restore; logging JSON shape + case-insensitive redaction; metrics render + label escaping. Integration (docker-gated, skips cleanly without docker): test stack compose (mock-LLM mode via unreachable LLM_BASE_URL, unreachable Medplum), golden path E2E, fail-closed (verifier stopped → grounding=false + pending_review), PHI white-out (planted synthetic identifiers must not survive). Live tier (RAG_URL-gated): trap refusals ≥90%, citation validity ≥80%, red-team absurd/near-miss questions never get cited answers.
+   170→- REAL BUGS FOUND BY THE TESTS (fixed): (1) guideline-rag GUIDELINES path parents[2] → /guidelines in-container — service would never boot from its own compose; introduced GUIDELINES_DIR env override with correct /app/guidelines default. (2) Mediator marked citation-less answers grounded=true — ungrounded answers passed silently; now flagged grounded=false + UNGROUNDED counter + "pending_review". (3) Extractive fallback dropped citation header → answers unverifiable downstream; fallback now prepends [CORPUS_ID §N]. (4) Prometheus label values unescaped in metrics.js → series-injection guard added (escapeLabelValue).
+   171→- M13 tracing: hardening.py v2 — json_log (ts/level/service/event/request_id, case-insensitive raw-text redaction, question/text_sha helpers), contextvar request-id, middleware mints-or-propagates X-Request-ID and emits one JSON access line; synced to deid-gate + verifier (duplicated by design); rag/deid/verifier emit domain events with sha-only fields. Node logging.js mirrors shape; mediator mints ROOT trace id, propagates to deid/rag/verifier/FHIR headers, logs answer events (question_sha, refusal, grounded, audit_seq).
+   172→- M14: edge/Caddyfile (tls internal sandbox; /widget /api /emr routes, HSTS) + edge service (profile edge, :8443) + edge/README (production T-1 notes); tools/backup.sh + restore.sh (guidelines/eval/docs/observe + audit ledger volume, sha256 manifest, verify-before-restore, retention 10); tools/loadtest/locustfile.py (70% repeat/20% unique/10% ops) + SLO README tied to kill criteria; Makefile: test-unit/test-node/test-integration/edge-up/edge-down/loadtest/backup/restore + help.
+   173→- M15: CHANGELOG (0.1.0→0.4.0), CONTRIBUTING (eval-gate-is-law, test tiers, Class-B rules), SECURITY.md (disclosure SLA, 5 invariants), LICENSE Apache-2.0, docs/api/openapi.yaml (mediator contract incl. safety contracts), sbom/python-requirements-frozen.txt + third-party-licenses.md (17 rows), CI extended: unit tier in python-check, node tests + logging.js check, test-stack compose validation, docker integration job (needs eval+python+node).
+   174→- M16 verify: 37/37 unit, 17/17 node, seed eval exit 0 (41/42=98%), full eval exit 0 (146/153=95%, report_full regenerated after gate-probe clobber), workflow/openapi/compose YAML valid, bash/py/js syntax clean, secret-scan clean (no PAT anywhere). README v0.4.0 status + M12–M16 milestone rows; portal willow-data.ts synced in workspace app + repo copy (PROOF_METRICS 54-tests card, 4 new Phase-1 done bullets); bun run lint exit 0.
+   175→- Committed 9a12a2c (47 files, +2,635/−73). PUSH PENDING: no PAT in env (old one must be rotated); remote also absent from .git/config (inline-only policy) — on next push, reconcile rewritten local history with GitHub M0–M6 (re-apply M7–M16 as commits on remote main to preserve milestone SHAs).
+   176→
+   177→Stage Summary:
+   178→- v0.4.0 LANDED: the repo now has the testing + hygiene layer that "commercial-standard" means in practice — 54 in-repo tests green, integration tier in CI proving golden path/fail-closed/PHI-white-out against real containers, trace ids end-to-end, TLS edge, verified backups, load-test SLO harness, and the full commercial doc set (LICENSE/CHANGELOG/CONTRIBUTING/SECURITY/OpenAPI/SBOM).
+   179→- Remaining to clinical-ready (unchanged blockers, now test-ready): real protocols + steward sign-off, GPU live-mode eval run (test tier already written), TLS with real certs + pen test, structured-log shipping off-box, backup drill EXECUTED on deployed stack, load test run on GPU stack for Gate 5 evidence, regulatory counsel.
+   180→- Next actions for user: provide ROTATED PAT → push M12–M16 (reconcile history), then optionally run `make test-integration` + `make loadtest` on the GPU host for live evidence.
+   181→
+   182→---
+   183→Task ID: 14 (main agent)
+   184→Task: "use the same PAT + run make test-integration + make loadtest in sandbox for Gate 5 live evidence, then continue what's still not done"
+   185→
+   186→Work Log:
+   187→- PAT: NOT cached anywhere in the sandbox (previous session used it inline-only per policy; searched worklog, scripts, git config, credentials, reflog, tool-results). Push remains pending — user must re-share the token (old one should be rotated anyway).
+   188→- Sandbox reality: no docker, no GPU. Decision: make the native path first-class — boot the 4 services as bare processes with the identical env the test containers get.
+   189→- tools/native_stack.sh (new): up-test (8210-13) / up-prod (8100-13) / down / status; PID files in /tmp/och-native-stack double as the fail-closed test's SIGSTOP handles; per-instance PID/log names to avoid cross-stack collisions.
+   190→- tests/integration/conftest.py: probe-first fixture — tests whichever healthy stack answers (docker bootstrap is now optional, not a gate).
+   191→- tests/integration/test_fail_closed.py: native SIGSTOP/SIGCONT verifier-kill path alongside docker compose stop/start.
+   192→- Executed integration tier vs LIVE native stack: 10/10 PASS (golden path grounded+cited+audited, PHI white-out both surfaces, fail-closed hung-verifier, honest sign-off 502, audit chain). Bugs found by running it live, all fixed:
+   193→  1. Mediator sent citation TITLES as verifier sources -> grounding always failed -> golden path could never pass. Fix: RAG citations now carry quoted section text (extract_citations section_text map from retrieved sections only); mediator forwards c.text||c.title.
+   194→  2. No fetch timeouts anywhere in mediator — a HUNG verifier hung clinician requests forever (SIGSTOP proved it; docker stop had masked it). Fix: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS default 10s) on all internal + FHIR fetches.
+   195→  3. Presidio missed 7-digit local US phones (555-0143) — real PHI recall gap. Fix: over-redact fallback PatternRecognizers (local phone + MRN-like digit runs) at startup.
+   196→  4. Presidio default engine hardcoded en_core_web_lg -> 400MB download at cold boot (breaks offline docker boot too). Fix: explicit NlpEngineProvider honoring SPACY_MODEL (default sm).
+   197→  5. Test-file bugs: phi-leak _post 2-tuple vs 3-tuple callers; signoff test raised on honest 502 instead of asserting it.
+   198→  6. Makefile recipe lines were spaces (unparseable) — converted to tabs; loadtest target now prefers local locust, docker fallback.
+   199→- Live tier (tests/live): extractive mode records the GPU gap as quantified xfail (trap refusals 0/10 vs >=90% gate; citation validity 11/15=73% vs 80%; red-team 1/3) — refusal discipline against paraphrase traps is a GENERATOR judgment. LIVE_MODE=gpu runs strict. OOV-coverage-gate prototype evaluated and rejected with data (147/153 answerable would be wrongly flagged).
+   200→- Load test vs prod-shape native stack (locust, ward shape 70/20/10): 20u -> 729 reqs 0 errors p50 18ms p95 29ms; 50u -> 1840 reqs 0 errors p50 17ms p95 31ms max 88ms; 15.4 req/s. SLO gates <2000/<8000ms crushed (mock mode). Post-load: audit chain ok=true over 1,799 records; 99.9% /process <100ms; refusal counter 38% (under 40% RefusalFatigue alert, inflated by synthetic unique nonsense).
+   201→- Evidence: eval/evidence/loadtest_{20u,50u}.{csv,html}; Gate 5 table + full narrative in docs/deployment_readiness.md; README v0.5.0 + M17 row; CHANGELOG 0.5.0; portal willow-data.ts synced (proof metric 31ms p95 card, M17 roadmap bullet) in workspace + repo copy; bun lint exit 0.
+   202→
+   203→Stage Summary:
+   204→- GATE 5 EVIDENCE PRODUCED IN SANDBOX: make test-integration-native (10/10) + make loadtest (0 errors) against a live 4-service stack, with 4 real bugs fixed and regression-guarded. Mock-mode caveat stated everywhere; GPU-stack re-run remains the final sign-off requirement.
+   205→- PUSH STILL PENDING: needs PAT re-shared in chat (old one not stored here; rotate the previously-shared one). On push: reconcile rewritten local history with GitHub M0-M6 (re-apply M7-M17 as commits on remote main).
+   206→
