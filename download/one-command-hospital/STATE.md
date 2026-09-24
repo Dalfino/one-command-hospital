@@ -16,7 +16,7 @@
 > and `git push origin main`. A session that ends without a push lost its work.
 
 - **Repo:** https://github.com/Dalfino/one-command-hospital (PRIVATE since 2026-09-24)
-- **Version:** v0.5.0 (M17) — canonical local SHA `db0d519`, pushed 2026-09-24
+- **Version:** v0.6.0 (M19–M23 safety+governance wave + tech radar)
 - **Status:** high-fidelity prototype on synthetic data; Gate 0–5 evidence
   produced in mock/simulated mode; NOT clinically deployable (see Blockers).
 
@@ -76,6 +76,8 @@ Port map: 8100 de-id · 8101 RAG · 8102 verifier · 8103 mediator · 8104 vLLM
 | M7–M11 (0875c1f) | network segmentation, read-only rootfs + cap_drop, rate limits, hash-chained audit + /audit/verify, governance/model-card/security docs, Prometheus+Grafana+alerts, 208-question eval (95%), doctor.sh, CI, answer cache, ambiguity margin |
 | M12–M16 (9a12a2c, v0.4.0) | test pyramid (unit/node/integration/live), trace-id propagation, JSON redacting logs, TLS edge, verified backup/restore, locust SLO harness, LICENSE/CHANGELOG/CONTRIBUTING/SECURITY/OpenAPI/SBOM, 4 real bugs fixed by tests |
 | M17 (db0d519, v0.5.0) | **live Gate 5 evidence**: integration 10/10 vs running stack, load 0 errors (p95 31ms @50u), 4 real bugs fixed (citation-text verifier contract, upstream timeouts, 7-digit phone PHI recall, Presidio cold-boot model), docker-optional native test path |
+| M18 (b19cebf, v0.5.1) | repo pushed to private GitHub as source of truth; STATE.md anchor; make bootstrap[-native]; .dockerignore ×5; Gate 5 re-verified after full environment reset |
+| M19–M23 (v0.6.0) | injection guard (8/8 live refusals) · calibration (ECE/risk-coverage/threshold) · sense-consistency verifier (historical/family) · clinician review queue + feedback→eval loop (live E2E verified) · claim-level faithfulness (0.94 first measurement) · docs/tech_radar.md |
 
 ## Gate status (deployment_readiness.md is the authoritative matrix)
 

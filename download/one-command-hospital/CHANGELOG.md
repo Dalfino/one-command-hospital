@@ -5,6 +5,50 @@ Format: [Keep a Changelog](https://keepachangelog.com/); versions: SemVer.
 This is a research project — **nothing here is cleared for clinical
 deployment** (see `docs/deployment_readiness.md` for the gate matrix).
 
+## [0.6.0] — Safety & governance capability wave (M19–M23) + tech radar
+
+### Added
+- **M19 prompt-injection defense** — `services/guideline-rag/app/injection_guard.py`
+  (9 instruction-collocation patterns, tuned against clinical-language false
+  positives); Gate 0 refuses injected questions, Gate 1b drops poisoned corpus
+  chunks before the generator prompt; `rag_injection_blocks_total{surface}`;
+  `eval/qa_injection.yaml` (8 hostile items) — **8/8 correct refusals live**.
+- **M20 calibration + selective abstention** — `eval/run_eval.py` captures
+  per-item confidence/correctness (`eval/scores.jsonl`); `eval/calibrate.py`
+  computes 10-bin reliability + ECE, risk-coverage curve, and the
+  max-coverage abstention threshold at target risk (`eval/calibration.json`).
+  Mock-mode ECE 0.33 with refit-on-GPU caveat recorded.
+- **M21 sense-consistency verifier** — `services/verifier/app/context_rules.py`
+  (dep-light, unit-testable): flags answers asserting CURRENT patient facts
+  whose only cited support is HISTORICAL or FAMILY; guideline conditionals
+  deliberately never flagged; `verifier_sense_conflicts_total`; verifier v0.4.
+- **M22 clinician review queue + feedback loop** — `services/ai-mediator/review.js`
+  (append-log with last-wins compaction; PHI-safe queue records);
+  `GET /review/queue`, `POST /review/queue/resolve`, minimal `/review` UI;
+  ungrounded answers auto-enrich the worklist; feedback ledger + `tools/feedback_to_eval.py`
+  drafts steward-reviewed eval items from corrections; weekly CI drift job
+  (full eval + calibration + 100% injection-refusal gate); verified live
+  end-to-end (5 real items enqueued by live traffic, resolve → feedback → draft,
+  audit chain intact @2,733).
+- **M23 claim-level faithfulness** — `eval/faithfulness.py`: decomposes answers
+  into claims, checks verbatim numbers, content overlap (≥0.5), and polarity
+  against the best-matching cited sentence; wired into every full-mode eval
+  report. **First measurement: mean 0.94 over 40 live answers** (extractive).
+- **`docs/tech_radar.md`** — wide emerging-tech scan with ADOPT/PILOT/WATCH/
+  REJECT verdicts (vector DBs → pgvector; guided decoding; MedGemma 1.5;
+  confidential computing; CDS Hooks; FHE/ZK/ambient-scribes rejected with
+  reasons; GPU-session short-list).
+
+### Fixed
+- `eval/run_eval.py` `RAG_URL` now accepts service root or full endpoint
+  (a bare host used to POST `/` → 404 every full-mode request).
+- CI: weekly drift schedule added; drift job ports corrected to the test stack.
+
+### Evidence (same-day, live stack)
+- Integration 10/10 · unit 60/60 (17 new) · node 22/22 (5 new) · seed full-mode
+  35/42 grounded, faithfulness 0.94 · injection 8/8 refused · load sanity
+  unchanged (p50 ≈ 21 ms) · audit chain ok @2,733 records.
+
 ## [0.5.2] — World-class bar assessment + upgrade roadmap
 
 ### Added

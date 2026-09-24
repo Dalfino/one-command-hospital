@@ -234,3 +234,21 @@ Work Log:
 - Stage Summary:
 - VERDICT DELIVERED: engineering = pilot-grade commercial-standard; clinical testing = silent-mode synthetic only (content+governance gate, not software); inference evaluation NOT done — the generator has never been evaluated (needs GPU host); "no mistakes" reframed as measurable defense-in-depth standard.
 - Next wave candidate: M19-M23 P0 batch, then GPU session.
+
+---
+Task ID: 17 (main agent)
+Task: "continue with M19-M23 + wide emerging-tech scan, assess wisely/strategically" → v0.6.0 capability wave
+
+Work Log:
+- M19 injection guard: services/guideline-rag/app/injection_guard.py — 9 collocation-anchored patterns (immune to "discharge instructions"-class false positives; benign clinical suite passes). Gate 0 refuses injected questions (refuse-and-log), Gate 1b drops poisoned corpus chunks before the generator; rag_injection_blocks_total{surface}; eval/qa_injection.yaml (8 items) → 8/8 live refusals. Fixed mid-build: exfil regex missed "the patient data".
+- M20 calibration: run_eval captures per-item {confidence: top retrieval score, correct} → eval/scores.jsonl; eval/calibrate.py → 10-bin reliability + ECE, risk-coverage curve, max-coverage abstention threshold at TARGET_RISK. Live: n=52, ECE 0.33, degenerate threshold = honest mock-mode artifact (caveat embedded). Fixed mid-build: last-bin catch-all made ECE wrong (test caught it).
+- M21 sense consistency: services/verifier/app/context_rules.py (dep-light + unit-tested) — flags CURRENT-fact assertions whose only support is HISTORICAL/FAMILY; conditionals deliberately exempt (guidelines are conditional); verifier v0.4 wires it into grounding verdict + verifier_sense_conflicts_total. Fixed mid-build: over-broad year/number cue would have flagged "80 mg," sentences → narrowed to explicit years.
+- M22 review queue: services/ai-mediator/review.js (append-log, last-wins compaction — restart test caught resurrection bug pre-ship); main.js: auto-enrich ungrounded answers, GET /review/queue, POST /review/queue/resolve, GET /review minimal UI (nested-template-literal syntax bug found by live boot, rebuilt with concat + esc()); feedback.jsonl + tools/feedback_to_eval.py (steward-review drafts); CI weekly drift job (full eval + calibrate + injection 100% gate; also fixed ports 8121→8211). LIVE E2E: 5 items from real traffic, resolve→feedback→draft, audit chain ok @2,733, review metrics exposed.
+- M23 faithfulness: eval/faithfulness.py — claim decomposition, verbatim-number check, ≥0.5 content overlap, polarity vs BEST-MATCHING cited sentence (union-level polarity was poisoned by other sentences' negations — real design fix). Wired into run_eval full mode. First measurement: mean 0.94 over 40 live answers.
+- Eval harness fix: RAG_URL accepts root or /answer endpoint (bare host was 404ing all full-mode requests — masked earlier by stack teardown ordering, not a code bug).
+- tech_radar.md: ADOPT (pgvector in existing data tier, guided/constrained decoding, CDS Hooks patient-view) / PILOT (MedGemma 1.5, embedding+reranker swap, guardrail classifier, TEE/confidential computing) / WATCH (GraphRAG, agentic RAG, SPLADE, MCP, SPIFFE, PQC, DP) / REJECT (FHE inference, ZK audit, ambient scribes) — each with trigger conditions; strategic note: eval infra is the multiplier.
+- Verification: unit 60/60 (17 new), node 22/22 (5 new), integration 10/10 (fresh test stack), YAML valid, py syntax clean; load sanity p50 ~21ms (no guard latency regression).
+- Synced README v0.6.0 + M19-M23 row, STATE.md (version + milestone ledger), CHANGELOG 0.6.0.
+- Stage Summary:
+- All five P0 upgrades from the world_class_bar roadmap are now SHIPPED AND LIVE-VERIFIED. Inference-eval ledger: faithfulness + calibration + injection + sense-consistency now measured; remaining eval gap = GPU generator judgment (unchanged blocker).
+- Next: single GPU session (Gate 5 final + PILOT experiments from radar) OR CDS Hooks facade as the next in-sandbox wave.

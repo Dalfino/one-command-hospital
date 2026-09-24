@@ -1,4 +1,4 @@
-"""Verifier — the strict teacher who checks the librarian's quotes (v0.3).
+"""Verifier — the strict teacher who checks the librarian's quotes (v0.4).
 
 Improvement #3, Phase 1: NLP-as-verifier with medspaCy ConText.
 
@@ -8,11 +8,11 @@ Checks, in order:
      polarity must be negated the same way in the cited source, and vice versa
      for positive claims about the same anchor word. Falls back to cue-word
      heuristics when medspaCy is unavailable.
-  3. Lexical grounding — content-word overlap between answer and sources.
+  3. Sense consistency (M21, context_rules) — the answer must not assert a
+     CURRENT PATIENT fact whose only cited support is HISTORICAL or FAMILY.
+  4. Lexical grounding — content-word overlap between answer and sources.
 
 Engine reported in /health: "medspacy-context" or "heuristic-v0".
-v0.3 hardening: NLP pipeline built ONCE (was per request), /metrics with
-conflict + grounding collectors, rate limit, body-size cap, security headers.
 """
 import re
 from typing import List
@@ -21,14 +21,16 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from .hardening import Counter, Gauge, install, json_log, request_id_of, text_sha
+from . import context_rules
 
-app = FastAPI(title="verifier", version="0.3.0")
+app = FastAPI(title="verifier", version="0.4.0")
 
 CONFLICTS = Counter("verifier_polarity_conflicts_total", "Polarity conflicts found.")
+SENSE_CONFLICTS = Counter("verifier_sense_conflicts_total", "Historical/family sense conflicts found.")
 INVALID_CITES = Counter("verifier_invalid_citations_total", "Citations not in retrieved sources.")
 GROUNDING = Gauge("verifier_grounding_score_last", "Lexical grounding score of the last verify.")
 UNGROUNDED = Counter("verifier_ungrounded_total", "Verdicts that failed grounding.")
-install(app, "verifier", extra=[CONFLICTS, INVALID_CITES, GROUNDING, UNGROUNDED])
+install(app, "verifier", extra=[CONFLICTS, SENSE_CONFLICTS, INVALID_CITES, GROUNDING, UNGROUNDED])
 
 WORD = re.compile(r"[a-z0-9]+")
 CITE = re.compile(r"\[([A-Z][A-Z0-9-]+)\s*§(\d+)\]")
@@ -151,26 +153,33 @@ def verify(req: VerifyRequest):
         notes.append("polarity conflicts — human review required")
         CONFLICTS.inc({"route": "/verify"}, len(conflicts))
 
+    # 2b. sense consistency (M21): asserting a current patient fact whose only
+    # cited support is historical or family — a real wrong-answer class.
+    sense_conflicts = context_rules.context_conflicts(req.answer, cited_text, anchors)
+    if sense_conflicts:
+        notes.append("sense conflicts (historical/family support only) — human review required")
+        SENSE_CONFLICTS.inc({"route": "/verify"}, len(sense_conflicts))
+
     # 3. lexical grounding
     ans_words = {w for w in WORD.findall(req.answer.lower()) if w not in STOP}
     src_words = {w for w in WORD.findall(cited_text.lower()) if w not in STOP}
     grounding = len(ans_words & src_words) / max(len(ans_words), 1)
     GROUNDING.set({"route": "/verify"}, round(grounding, 3))
 
-    grounded = (not invalid) and grounding >= 0.45 and not conflicts
+    grounded = (not invalid) and grounding >= 0.45 and not conflicts and not sense_conflicts
     if not grounded:
         UNGROUNDED.inc({"route": "/verify"})
 
     json_log("verifier", "verify", request_id=request_id_of(),
              answer_sha=text_sha(req.answer), grounded=grounded,
              grounding_score=round(grounding, 3), invalid=len(invalid),
-             conflicts=len(conflicts), engine=engine)
+             conflicts=len(conflicts) + len(sense_conflicts), engine=engine)
 
     return VerifyResponse(
         grounded=grounded,
         grounding_score=round(grounding, 3),
         invalid_citations=invalid,
-        polarity_conflicts=conflicts,
+        polarity_conflicts=conflicts + [f"sense: {c}" for c in sense_conflicts],
         notes=notes,
     )
 

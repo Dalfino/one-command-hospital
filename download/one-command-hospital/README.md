@@ -1,4 +1,4 @@
-# One-Command Hospital — Guideline Copilot (v0.5.1)
+# One-Command Hospital — Guideline Copilot (v0.6.0)
 
 A clinician asks a protocol question **inside the EHR** and gets a cited answer from the
 hospital's own guidelines — or an honest refusal. Zero PHI reaches the AI. One GPU. One command.
@@ -142,6 +142,7 @@ docs/              architecture.md, improvements.md
 | M16 | sync | README/portal truth sync, v0.4.0, worklog |
 | M17 | evidence | **Live Gate 5 run**: integration 10/10 vs native stack, locust 20u+50u (0 errors, p95 31 ms, mock), audit chain intact @1,799 records, live-tier GPU-gap quantified (0/10 traps, 73% cites in extractive). **Found + fixed: verifier grounding contract, no upstream timeout (hung verifier hung clinician), 7-digit phone de-id gap, Presidio lg cold-boot download**. `make test-integration-native` + `make loadtest` now docker-optional |
 | M18 | persistence | **Repo = source of truth**: pushed to private GitHub; `STATE.md` session anchor (recovery protocol + gap ledger); `make bootstrap[-native]` fresh-host onboarding (random-secret .env, health-wait); `.dockerignore` ×5; **Gate 5 re-verified post-reset** (10/10, 37/37, 17/17, 0 load errors p95 26–27 ms, audit ok @2,615) |
+| M19–M23 | safety+governance | **Injection guard** (Gate 0 question screen, Gate 1b poisoned-chunk drop, 8/8 live refusals) · **calibration** (ECE + risk-coverage + abstention threshold, mock-mode caveat) · **sense-consistency verifier** (historical/family conflict class) · **clinician review queue + feedback→eval loop** (live E2E verified, weekly CI drift job) · **claim-level faithfulness** (first measurement 0.94) · `docs/tech_radar.md` (ADOPT/PILOT/WATCH/REJECT emerging-tech scan) |
 
 ## Licensing note
 

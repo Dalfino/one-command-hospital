@@ -18,10 +18,13 @@ import express from "express";
 import { randomUUID } from "node:crypto";
 import { authMode, fhirHeaders } from "./medplum-auth.js";
 import { audit, verifyChain, auditPath } from "./audit.js";
+import { enqueue as reviewEnqueue, listOpen as reviewListOpen, counts as reviewCounts,
+         resolve as reviewResolve, isDecision, feedbackPath } from "./review.js";
 import { logEvent, newRequestId, questionHash } from "./logging.js";
 import {
   REQUESTS, DURATION, REFUSALS, UNGROUNDED,
-  SIGNOFFS, AUDIT_EVENTS, AUDIT_VERIFY_FAILURES, AUDIT_RECORDS, renderMetrics,
+  SIGNOFFS, AUDIT_EVENTS, AUDIT_VERIFY_FAILURES, AUDIT_RECORDS,
+  REVIEW_OPEN, REVIEW_RESOLVED, renderMetrics,
 } from "./metrics.js";
 
 const app = express();
@@ -239,6 +242,19 @@ app.post("/process", async (req, res) => {
     });
     AUDIT_EVENTS.inc({ route: "/process", action: "answer" });
 
+    // 6b. Ungrounded answers land in the clinician review queue (M22) —
+    // "pending_review" becomes a worklist item, not just a JSON flag.
+    if (!verification.grounded) {
+      const item = reviewEnqueue({
+        qid: record.seq,               // audit seq doubles as the queue id
+        audit_seq: record.seq,
+        communication_id: communication.id,
+        question_sha: questionHash(scrubbedQuestion),
+        reason: (verification.notes || []).join("; ") || "ungrounded answer",
+      });
+      if (item) REVIEW_OPEN.set({ route: "review" }, reviewCounts().open);
+    }
+
     logEvent("ai-mediator", "answer", {
       question_sha: questionHash(scrubbedQuestion),
       question_chars: question.length,
@@ -299,6 +315,68 @@ app.post("/signoff", async (req, res) => {
     audit(by, "signoff_error", { communication_id: communicationId, error: String(e.message) });
     res.status(502).json({ error: String(e.message) });
   }
+});
+
+/** GET /review/queue — the open clinician-review worklist (M22). */
+app.get("/review/queue", (_req, res) => {
+  res.json({ open: reviewListOpen(), counts: reviewCounts(), feedback_file: feedbackPath() });
+});
+
+/** POST /review/queue/resolve — clinician verdict + optional correction.
+ * Body: {qid, decision: accurate_enough|inaccurate|unsafe|not_needed, correction?, by?} */
+app.post("/review/queue/resolve", (req, res) => {
+  const { qid, decision, correction, by = "clinician" } = req.body || {};
+  if (!qid || !isDecision(decision)) {
+    return res.status(400).json({ error: "qid and valid decision required",
+                                  decisions: ["accurate_enough", "inaccurate", "unsafe", "not_needed"] });
+  }
+  const result = reviewResolve({ qid, decision, correction, by });
+  if (!result) return res.status(404).json({ error: `open item ${qid} not found` });
+  audit(by, "review_resolution", { qid, decision, correction_chars: String(correction || "").length });
+  REVIEW_RESOLVED.inc({ route: "/review/queue/resolve", decision });
+  REVIEW_OPEN.set({ route: "review" }, reviewCounts().open);
+  res.json({ ok: true, qid, decision, feedback_recorded: decision !== "not_needed" });
+});
+
+/** GET /review — minimal zero-dependency worklist UI (sandbox-grade).
+ * Production swaps this for the portal app behind SSO (see STATE.md blockers). */
+app.get("/review", (_req, res) => {
+  res.set("Content-Security-Policy",
+          "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'");
+  res.type("html").send(`<!doctype html><html><head><meta charset="utf-8">
+<title>Guideline Copilot — Review Queue</title>
+<style>body{font-family:system-ui;margin:2rem;max-width:56rem}h1{font-size:1.3rem}
+.item{border:1px solid #ddd;border-radius:8px;padding:1rem;margin:.8rem 0}
+.meta{color:#666;font-size:.85rem}textarea{width:100%;min-height:3rem;margin:.4rem 0}
+button{margin-right:.4rem;padding:.3rem .7rem;cursor:pointer}
+.ok{color:#0a7d33}.bad{color:#b3261e}</style></head><body>
+<h1>Review queue — answers flagged for human verification</h1>
+<div id="q">loading…</div>
+<script>
+const DECISIONS=["accurate_enough","inaccurate","unsafe","not_needed"];
+function esc(s){const d=document.createElement("div");d.textContent=String(s==null?"":s);return d.innerHTML;}
+async function load(){
+  const r=await fetch('/review/queue');const d=await r.json();
+  const el=document.getElementById('q');
+  if(d.open.length===0){el.innerHTML='<p class="ok">Queue empty — nothing awaiting review.</p>';return;}
+  el.innerHTML=d.open.map(function(i){
+    return '<div class="item"><b>#'+esc(i.qid)+'</b> <span class="meta">'+esc(i.reason)+'</span>'
+      +'<div class="meta">audit_seq='+esc(i.audit_seq)+' sha='+esc(i.question_sha)+' at '+esc(i.created_at)+'</div>'
+      +'<textarea id="c'+esc(i.qid)+'" placeholder="correction (optional; becomes eval-set candidate)"></textarea><br>'
+      +DECISIONS.map(function(dec){return '<button onclick="resolve('+esc(i.qid)+',\\''+dec+'\\')">'+dec+'</button>';}).join("")
+      +'</div>';
+  }).join("");
+}
+async function resolve(qid,decision){
+  const ta=document.getElementById('c'+qid);
+  const correction=ta?ta.value:"";
+  const r=await fetch('/review/queue/resolve',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({qid:qid,decision:decision,correction:correction,by:'sandbox-clinician'})});
+  if(r.ok){load();}else{alert('resolve failed: '+(await r.text()));}
+}
+load();setInterval(load,15000);
+</script></body></html>`);
 });
 
 const port = process.env.PORT || 3000;

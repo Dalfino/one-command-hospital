@@ -98,9 +98,11 @@ export const SIGNOFFS = new Counter("mediator_signoffs_total", "Human sign-offs/
 export const AUDIT_EVENTS = new Counter("audit_events_total", "Audit events appended, by action.");
 export const AUDIT_VERIFY_FAILURES = new Counter("audit_verify_failures_total", "Chain verification failures.");
 export const AUDIT_RECORDS = new Gauge("audit_records_last", "Record count at the last chain verification.");
+export const REVIEW_OPEN = new Gauge("review_queue_open", "Open items in the clinician review queue.");
+export const REVIEW_RESOLVED = new Counter("review_resolutions_total", "Clinician review resolutions, by decision.");
 
 export function renderMetrics() {
-  const collectors = [REQUESTS, DURATION, REFUSALS, UNGROUNDED, SIGNOFFS, AUDIT_EVENTS, AUDIT_VERIFY_FAILURES, AUDIT_RECORDS];
+  const collectors = [REQUESTS, DURATION, REFUSALS, UNGROUNDED, SIGNOFFS, AUDIT_EVENTS, AUDIT_VERIFY_FAILURES, AUDIT_RECORDS, REVIEW_OPEN, REVIEW_RESOLVED];
   const lines = [];
   for (const c of collectors) lines.push(...c.render());
   return lines.join("\n") + "\n";

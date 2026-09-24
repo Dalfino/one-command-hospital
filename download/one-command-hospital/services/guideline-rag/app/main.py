@@ -31,6 +31,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from .retrieval import HybridRetriever
+from .injection_guard import scan as injection_scan
 from .hardening import Counter, Gauge, Histogram, install, json_log, request_id_of
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]   # container: /app  (repo override via GUIDELINES_DIR)
@@ -53,7 +54,8 @@ REFUSALS = Counter("rag_refusals_total", "Refusals returned, by reason.")
 CACHE_HITS = Counter("rag_cache_hits_total", "Answers served from the TTL cache.")
 TOP_SCORE = Gauge("rag_top_score_last", "Retrieval score of the last query's top hit.")
 RETRIEVAL_GAP = Gauge("rag_margin_last", "Score gap between top-1 and top-2 of the last query.")
-install(app, "guideline-rag", extra=[REFUSALS, CACHE_HITS, TOP_SCORE, RETRIEVAL_GAP])
+INJECTION_BLOCKS = Counter("rag_injection_blocks_total", "Prompt-injection patterns blocked, by surface.")
+install(app, "guideline-rag", extra=[REFUSALS, CACHE_HITS, TOP_SCORE, RETRIEVAL_GAP, INJECTION_BLOCKS])
 
 manifest: dict = {}
 retriever: HybridRetriever | None = None
@@ -188,6 +190,12 @@ def _refusal(reason: str, latency_ms: int, retrieval_meta: dict) -> Answer:
                   retrieval=retrieval_meta)
 
 
+def retrieval_meta_placeholder() -> dict:
+    # Injection refusals fire before retrieval meta is assembled; keep the
+    # contract (retrieval is Optional) honest instead of null-ing loudly.
+    return None
+
+
 @app.post("/answer", response_model=Answer)
 def answer(q: Question):
     t0 = time.time()
@@ -202,6 +210,18 @@ def answer(q: Question):
         return Answer(**{**cached, "latency_ms": int((time.time() - t0) * 1000)})
 
     results = retriever.search(q.question, k=3)
+
+    # Gate 0 — injection screen on the QUESTION itself (M19). Refuse-and-log:
+    # a question carrying generator instructions never reaches the prompt.
+    q_findings = injection_scan(q.question)
+    if q_findings:
+        INJECTION_BLOCKS.inc({"route": "/answer", "surface": "question"}, len(q_findings))
+        json_log("guideline-rag", "injection_blocked", request_id=request_id_of(),
+                 surface="question", patterns=[f["pattern_id"] for f in q_findings],
+                 question_sha=hashlib.sha256(q.question.encode()).hexdigest()[:12])
+        return _refusal("prompt-injection pattern detected in question",
+                        int((time.time() - t0) * 1000), retrieval_meta_placeholder())
+
     top_score = results[0]["score"] if results else 0.0
     gap = (results[0]["score"] - results[1]["score"]) if len(results) >= 2 else 1.0
     TOP_SCORE.set({"route": "/answer"}, round(top_score, 4))
@@ -214,8 +234,26 @@ def answer(q: Question):
                               for r in results]}
 
     # Gate 1 — confidence: nothing scored above the floor → refuse, don't guess.
-    hits = [{**SECTIONS[r["index"]], "score": r["score"]}
-            for r in results if r["score"] >= THRESHOLD]
+    raw_hits = [{**SECTIONS[r["index"]], "score": r["score"]}
+                for r in results if r["score"] >= THRESHOLD]
+
+    # Gate 1b — injection screen on the CORPUS chunks (M19). A poisoned
+    # guideline chunk must not reach the generator prompt; it is dropped and
+    # counted. If EVERY hit is poisoned there is nothing safe to answer from.
+    hits, anomalies = [], 0
+    for h in raw_hits:
+        if injection_scan(h["text"]):
+            anomalies += 1
+            continue
+        hits.append(h)
+    if anomalies:
+        INJECTION_BLOCKS.inc({"route": "/answer", "surface": "corpus"}, anomalies)
+        json_log("guideline-rag", "injection_blocked", request_id=request_id_of(),
+                 surface="corpus", dropped=anomalies)
+        retrieval_meta["corpus_anomalies"] = anomalies
+    if raw_hits and not hits:
+        return _refusal("every retrieved section failed the integrity screen",
+                        int((time.time() - t0) * 1000), retrieval_meta)
     if not hits:
         json_log("guideline-rag", "refusal", request_id=request_id_of(),
                  reason="below-threshold",

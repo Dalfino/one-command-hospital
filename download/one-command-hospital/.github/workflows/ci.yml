@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1"   # weekly drift watch (drift job)
 
 jobs:
   eval-gate:
@@ -120,6 +122,36 @@ jobs:
         run: docker compose -f tests/integration/docker-compose.test.yml up -d --build
       - name: Run integration tier
         run: python -m pytest tests/integration -m integration -q
+      - name: Tear down
+        if: always()
+        run: docker compose -f tests/integration/docker-compose.test.yml down -v
+
+  drift:
+    # M22: scheduled regression watch. Every Monday 03:00 UTC the FULL eval
+    # set runs against a freshly built test stack; a retrieval drop below the
+    # 80% gate (or harness failure) opens a red build — the metric-movement
+    # signal that corpus/model edits drifted something.
+    name: Weekly drift watch (full eval vs test stack)
+    runs-on: ubuntu-latest
+    needs: [eval-gate]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install eval deps
+        run: pip install -r eval/requirements.txt -r tests/requirements.txt
+      - name: Boot test stack (mock-LLM mode)
+        run: docker compose -f tests/integration/docker-compose.test.yml up -d --build
+      - name: Full eval against live stack (with faithfulness + confidence capture)
+        run: RAG_URL=http://localhost:8211 python eval/run_eval.py eval/qa_full.yaml
+      - name: Calibration analysis (risk-coverage + abstention threshold)
+        run: python eval/calibrate.py
+      - name: Injection set must refuse 100%
+        run: |
+          RAG_URL=http://localhost:8211 python eval/run_eval.py eval/qa_injection.yaml
+          grep -q "correct refusals: 8" eval/report_injection.md || {
+            echo "injection refusal rate regressed"; exit 1; }
       - name: Tear down
         if: always()
         run: docker compose -f tests/integration/docker-compose.test.yml down -v

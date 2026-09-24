@@ -18,6 +18,11 @@ import urllib.request
 
 import yaml
 
+try:
+    from faithfulness import faithfulness as faithfulness_score  # M23
+except ImportError:  # direct-script execution from eval/ cwd
+    faithfulness_score = None
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 GUIDELINES = ROOT / "guidelines"
 # Usage: run_eval.py [questions.yaml]   (default: qa_seed.yaml; CI also runs qa_full.yaml)
@@ -71,6 +76,10 @@ def retrieval_scores(sections):
 
 
 def call_rag(url, question):
+    # Accept either the service root (http://host:8101) or the full endpoint
+    # (http://host:8101/answer) — a bare host used to 404 every request.
+    if not url.rstrip("/").endswith("/answer"):
+        url = url.rstrip("/") + "/answer"
     req = urllib.request.Request(
         url,
         data=json.dumps({"question": question}).encode(),
@@ -85,6 +94,8 @@ def main():
     scorer = retrieval_scores(sections)
     rag_url = os.environ.get("RAG_URL")
     top_k = int(os.environ.get("TOP_K", "3"))
+    score_rows = []  # M20: {confidence, correct} per graded item
+    faith_scores = []  # M23: per-answer claim-level faithfulness
 
     rows, hits, ref_ok, cite_ok, n_ref, n_ans = [], 0, 0, 0, 0, 0
     for q in QUESTIONS:
@@ -112,9 +123,15 @@ def main():
                 row["latency_ms"] = int((time.time() - t0) * 1000)
                 refused = bool(resp.get("refusal"))
                 cites = resp.get("citations", [])
+                # M20 confidence signal: normalized top retrieval score.
+                rmeta = resp.get("retrieval") or {}
+                tops = rmeta.get("top") or []
+                confidence = float(tops[0]["score"]) if tops else 0.0
                 if q.get("refusal"):
                     ref_ok += refused
                     row["answer"] = "PASS" if refused else "FAIL"
+                    score_rows.append({"confidence": round(confidence, 4),
+                                       "correct": int(bool(refused))})
                 else:
                     ok_refusal = not refused
                     valid_cites = any(c.get("corpus_id") == q["expected_corpus"]
@@ -123,9 +140,23 @@ def main():
                     cite_ok += (ok_refusal and valid_cites)
                     row["answer"] = "PASS" if (ok_refusal and valid_cites) else "FAIL"
                     row["cites"] = "; ".join(f'{c.get("corpus_id")}§{c.get("section")}' for c in cites) or "-"
+                    score_rows.append({"confidence": round(confidence, 4),
+                                       "correct": int(bool(ok_refusal and valid_cites))})
+                    # M23: claim-level faithfulness against the cited sections
+                    if faithfulness_score and not refused:
+                        f = faithfulness_score(resp.get("answer", ""),
+                                               [c.get("text", "") for c in cites])
+                        if f["score"] is not None:
+                            faith_scores.append(f["score"])
+                            row["faith"] = f["score"]
             except Exception as e:  # service down → don't crash the harness
                 row["answer"] = f"ERR ({e.__class__.__name__})"
         rows.append(row)
+
+    # M20: persist per-item confidence/correctness for calibrate.py
+    if score_rows:
+        (pathlib.Path(__file__).parent / "scores.jsonl").write_text(
+            "\n".join(json.dumps(r) for r in score_rows) + "\n")
 
     lines = [
         "# Eval report",
@@ -136,9 +167,14 @@ def main():
     if rag_url:
         lines.append(f"- refusal cases: {n_ref} | correct refusals: {ref_ok}")
         lines.append(f"- grounded answers (valid citation): {cite_ok}/{n_ans}")
-    lines += ["", "| id | expected | hit | answer | top retrieved |", "|---|---|---|---|---|"]
+    if faith_scores:
+        lines.append(f"- claim faithfulness: mean {sum(faith_scores)/len(faith_scores):.2f} "
+                     f"over {len(faith_scores)} answers (M23; mock-mode extractive generator)")
+    if rag_url and score_rows:
+        lines.append("- calibration: run `python3 calibrate.py` for ECE + risk-coverage + abstention threshold")
+    lines += ["", "| id | expected | hit | answer | faith | top retrieved |", "|---|---|---|---|---|---|"]
     for r in rows:
-        lines.append(f'| {r["id"]} | {r["expected"]} | {r["retrieval_hit"]} | {r.get("answer", "-")} | {r["top"]} |')
+        lines.append(f'| {r["id"]} | {r["expected"]} | {r["retrieval_hit"]} | {r.get("answer", "-")} | {r.get("faith", "-")} | {r["top"]} |')
     (pathlib.Path(__file__).parent / _report_name()).write_text("\n".join(lines))
     print("\n".join(lines[:6]))
     print(f"→ full report: {pathlib.Path(__file__).parent / _report_name()}")
@@ -147,7 +183,11 @@ def main():
 
 
 def _report_name():
-    return "report.md" if len(sys.argv) <= 1 or sys.argv[1].endswith("qa_seed.yaml") else "report_full.md"
+    if len(sys.argv) <= 1 or sys.argv[1].endswith("qa_seed.yaml"):
+        return "report.md"
+    if sys.argv[1].endswith("qa_injection.yaml"):
+        return "report_injection.md"
+    return "report_full.md"
 
 
 if __name__ == "__main__":
