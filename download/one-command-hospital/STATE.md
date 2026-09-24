@@ -129,6 +129,10 @@ for clinician walkthrough, demo dataset load story.
 
 ## Remaining blockers to clinical-ready (the honest list)
 
+> Full bar-by-bar assessment + prioritized upgrade roadmap (P0 buildable /
+> P1 GPU-host / P2 organizational) lives in **`docs/world_class_bar.md`** —
+> read that before planning any new work wave.
+
 1. Real clinical guideline corpus + clinical steward sign-off (content is
    synthetic/placeholder — this is the #1 blocker and is a human task).
 2. GPU-stack live-mode run: `LIVE_MODE=gpu make -C tests/live ...` strict gates

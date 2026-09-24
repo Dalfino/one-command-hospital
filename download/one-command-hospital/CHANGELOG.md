@@ -5,6 +5,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/); versions: SemVer.
 This is a research project — **nothing here is cleared for clinical
 deployment** (see `docs/deployment_readiness.md` for the gate matrix).
 
+## [0.5.2] — World-class bar assessment + upgrade roadmap
+
+### Added
+- **`docs/world_class_bar.md`** — honest assessment of the project against an
+  explicit "top-hospital, no-mistakes" bar: three-line verdict (engineering
+  pilot-grade yes; clinical testing = silent-mode synthetic only; generator
+  inference evaluation NOT done), scorecard by domain, a complete
+  inference-evaluation ledger (evaluated vs not, ranked by risk), and the
+  prioritized roadmap — P0 buildable in-sandbox (M19 prompt-injection suite,
+  M20 calibration/abstention, M21 ConText verifier, M22 clinician review
+  queue + feedback loop, M23 claim-level faithfulness scorer), P1 the single
+  GPU-host session (strict live gates → Gate 5 final sign-off), P2
+  organizational blockers (corpus stewardship, counsel, pen test, SLA/on-call).
+- Fresh evidence same day: integration 10/10, seed eval 41/42 = 98%, unit
+  37/37, node 17/17 against the running stack.
+
 ## [0.5.1] — Persistence + reproducibility wave
 
 ### Added

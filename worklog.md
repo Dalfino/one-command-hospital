@@ -221,3 +221,16 @@ Work Log:
 - THE PERSISTENCE PROBLEM IS SOLVED: GitHub (private) is canonical; any fresh session = clone → read STATE.md → work. End-of-session protocol: commit + push, no exceptions.
 - Docker path ready for user's GPU host: git clone → make bootstrap --gpu. Sandbox keeps using native path (no docker daemon here).
 - Next: GPU-stack live-mode run (LIVE_MODE=gpu strict gates + eval + loadtest) = Gate 5 final sign-off; real guideline corpus + steward sign-off remain the #1 clinical blocker.
+
+---
+Task ID: 16 (main agent)
+Task: "status check: commercial-standard? clinical-testing ready? inference evaluation done? top-hospital bar + upgrades" → M18.1 assessment wave (v0.5.2)
+
+Work Log:
+- Fresh verification (sandbox survived, stack still up on 8100-13): unit 37/37, node 17/17, test-integration-native 10/10 (10.5s), seed eval 41/42=98% retrieval, audit chain ok. UUID resync commit d6e01bd inspected — benign (tool-results + synthea dockerignore), makefile still parses.
+- Wrote docs/world_class_bar.md: 3-line verdict, domain scorecard vs top-hospital bar, complete inference-eval ledger (evaluated vs NOT — generator never judged, calibration, adversarial, ConText, claim-faithfulness, clinician grading, fairness, drift), roadmap P0 (M19 injection suite / M20 calibration+abstention / M21 ConText / M22 review queue+feedback / M23 faithfulness scorer — all sandbox-buildable) / P1 (single GPU session → Gate 5 final) / P2 (organizational).
+- STATE.md blockers section now points to world_class_bar.md as planning input; CHANGELOG 0.5.2.
+- Committed + pushed (v0.5.2).
+- Stage Summary:
+- VERDICT DELIVERED: engineering = pilot-grade commercial-standard; clinical testing = silent-mode synthetic only (content+governance gate, not software); inference evaluation NOT done — the generator has never been evaluated (needs GPU host); "no mistakes" reframed as measurable defense-in-depth standard.
+- Next wave candidate: M19-M23 P0 batch, then GPU session.
