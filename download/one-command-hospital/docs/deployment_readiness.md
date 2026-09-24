@@ -138,6 +138,29 @@ de-id → retrieval → verify → audit path live. The GPU-stack re-run
 (`make up-gpu` + the same two commands) remains required evidence for the
 final sign-off, where LLM generation latency will dominate.
 
+### Gate 5 re-verification — after full environment reset (2026-09-24, v0.5.1)
+
+The dev sandbox was wiped and rebuilt from the repository alone (clone →
+`make bootstrap-native` → tests). Purpose: prove the evidence is
+**reproducible from source control**, not an artifact of a hand-configured
+environment. Results, same day, fresh machine state:
+
+| Check | Result |
+|---|---|
+| `make bootstrap-native` | .env generated (random secrets), 4/4 services healthy |
+| `make test-integration-native` | **10/10 PASS** (10.5 s) |
+| `make test-unit` | **37/37 PASS** |
+| `make test-node` | **17/17 PASS** |
+| load 20u × 1 min (`loadtest_20u_reset`) | 357 reqs, **0 errors**, p95 27 ms |
+| load 50u × 1 min (`loadtest_50u_reset`) | 779 reqs, **0 errors**, p95 26 ms, 13.2 req/s |
+| audit chain post-load | `ok: true` over 2,615 records |
+
+One environment-drift bug was caught by this drill: the Makefile's tab
+indentation had been silently normalized to spaces between sessions (make
+failed with "missing separator" on a fresh checkout of the synced tree),
+fixed mechanically and now covered by the bootstrap path failing fast
+instead of mid-run.
+
 ---
 
 ## Sign-off

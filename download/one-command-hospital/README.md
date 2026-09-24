@@ -1,15 +1,14 @@
-# One-Command Hospital — Guideline Copilot (v0.5.0)
+# One-Command Hospital — Guideline Copilot (v0.5.1)
 
 A clinician asks a protocol question **inside the EHR** and gets a cited answer from the
 hospital's own guidelines — or an honest refusal. Zero PHI reaches the AI. One GPU. One command.
 
-> **Status: v0.5.0 — the integration + load tiers have been EXECUTED against a live stack.**
-> **Integration 10/10 vs running services (golden path, PHI white-out, fail-closed under a hung
-> verifier); load test 0 errors at 20 and 50 users, p50 ≈ 18 ms / p95 ≈ 31 ms (mock mode);
-> audit hash chain intact over 1,799 audited requests. Four real bugs found and fixed by the
-> live run (mediator↔verifier grounding contract, hung-upstream timeout, de-id phone recall,
-> Presidio cold-boot download). No docker? `make test-integration-native`.** Evidence in
-> `docs/deployment_readiness.md` (Gate 5) and `eval/evidence/`.
+> **Status: v0.5.1 — reproducible from source control.** Gate 5 evidence re-verified after a full
+> environment reset: fresh host → `make bootstrap-native` → integration **10/10**, unit **37/37**,
+> node **17/17**, load **0 errors** at 20+50 users (p95 ≈ 26–27 ms, mock mode), audit chain ok
+> over 2,615 records. Fresh-host onboarding is one command (`make bootstrap`, or `--native` without
+> docker; generates `.env` with random secrets, waits healthy). Project state + recovery protocol
+> live in **STATE.md**. Still **NOT cleared for clinical deployment** — see docs/deployment_readiness.md.
 > Structured JSON logs with PHI redaction + X-Request-ID tracing; edge TLS, backup/restore drills.
 > SECURITY / LICENSE / OpenAPI contract / SBOM register. Eval: **208 questions** — seed **98%**,
 > full **95%** (CI gate ≥80%). **NOT cleared for clinical deployment — see
@@ -142,6 +141,7 @@ docs/              architecture.md, improvements.md
 | M15 | hygiene | CHANGELOG, CONTRIBUTING, SECURITY policy, Apache-2.0 LICENSE, OpenAPI 3.1 contract, SBOM + license register, CI: node tests + docker integration job |
 | M16 | sync | README/portal truth sync, v0.4.0, worklog |
 | M17 | evidence | **Live Gate 5 run**: integration 10/10 vs native stack, locust 20u+50u (0 errors, p95 31 ms, mock), audit chain intact @1,799 records, live-tier GPU-gap quantified (0/10 traps, 73% cites in extractive). **Found + fixed: verifier grounding contract, no upstream timeout (hung verifier hung clinician), 7-digit phone de-id gap, Presidio lg cold-boot download**. `make test-integration-native` + `make loadtest` now docker-optional |
+| M18 | persistence | **Repo = source of truth**: pushed to private GitHub; `STATE.md` session anchor (recovery protocol + gap ledger); `make bootstrap[-native]` fresh-host onboarding (random-secret .env, health-wait); `.dockerignore` ×5; **Gate 5 re-verified post-reset** (10/10, 37/37, 17/17, 0 load errors p95 26–27 ms, audit ok @2,615) |
 
 ## Licensing note
 

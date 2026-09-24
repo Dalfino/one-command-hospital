@@ -5,6 +5,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/); versions: SemVer.
 This is a research project — **nothing here is cleared for clinical
 deployment** (see `docs/deployment_readiness.md` for the gate matrix).
 
+## [0.5.1] — Persistence + reproducibility wave
+
+### Added
+- **`STATE.md`** — the session anchor: architecture map, milestone ledger,
+  gate status, six-dimension gap ledger, remaining blockers, key commands,
+  and the recovery protocol for any fresh sandbox/host. The sandbox is
+  ephemeral; this file (plus `worklog.md` and this changelog) travels in the
+  repo and reconstructs full project context in one read.
+- **`tools/bootstrap.sh` + `make bootstrap[-native]`** — fresh host, zero to
+  running: generates `.env` with random secrets on first run (never
+  overwrites), picks the docker path by default with `--gpu/--observe/--edge`
+  profile flags, falls back to the bare-process stack with `--native`, waits
+  for all four `/health` endpoints before returning, `--down` to stop.
+- **`.dockerignore`** for all five build contexts (4 AI services + synthea) —
+  minimal build contexts, no host-file leakage into images.
+- **Gate 5 re-verification after a full environment reset** (see
+  `docs/deployment_readiness.md`): bootstrap-native → integration 10/10,
+  unit 37/37, node 17/17, load 20u/50u 0 errors (p95 27/26 ms), audit chain
+  ok over 2,615 records. Evidence: `eval/evidence/loadtest_*_reset.*`.
+
+### Fixed
+- Makefile recipe indentation silently normalized from tabs to 8 spaces
+  between sessions (make: "missing separator" on fresh checkout) — repaired
+  mechanically (`scripts/fix_makefile_tabs.py` in the workspace repo).
+- Repository pushed to GitHub as the off-sandbox source of truth (private);
+  stale remote history superseded by the canonical M0–M17 local history.
+
 ## [0.5.0] — Live Gate 5 evidence run (M17)
 
 ### Added

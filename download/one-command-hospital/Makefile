@@ -1,9 +1,11 @@
-.PHONY: help up up-gpu down logs patients conformance eval eval-full observe doctor audit-verify \
-	test-unit test-node test-integration test-integration-native stack-prod stack-stop edge-up edge-down backup restore loadtest clean
+.PHONY: help bootstrap bootstrap-native up up-gpu down logs patients conformance eval eval-full observe doctor audit-verify \
+        test-unit test-node test-integration test-integration-native stack-prod stack-stop edge-up edge-down backup restore loadtest clean
 
 help:
 	@echo "One-Command Hospital"
 	@echo "  make doctor       preflight check (docker, env, ports, disk, GPU, secrets)"
+	@echo "  make bootstrap    fresh host → running stack (generates .env, waits healthy)"
+	@echo "  make bootstrap-native   same, bare-process path when docker is absent"
 	@echo "  make up           start core stack (EHR, spine, bus, AI services)"
 	@echo "  make up-gpu       core stack + vLLM serving BioMistral-7B"
 	@echo "  make observe      + Prometheus (:8106) and Grafana (:8107) dashboards"
@@ -21,6 +23,12 @@ help:
 	@echo "  make backup       verified backup (repo + audit ledger, sha256 manifest)"
 	@echo "  make restore      verified restore drill (FILE=backups/<name>.tar.gz)"
 	@echo "  make down         stop everything"
+
+bootstrap:
+	bash tools/bootstrap.sh
+
+bootstrap-native:
+	bash tools/bootstrap.sh --native
 
 up:
 	docker compose up -d --build
@@ -60,7 +68,7 @@ doctor:
 
 audit-verify:
 	@curl -sf http://localhost:8103/audit/verify | python3 -m json.tool \
-		|| echo "ai-mediator unreachable — is the stack up? (make up)"
+                || echo "ai-mediator unreachable — is the stack up? (make up)"
 
 test-unit:
 	python3 -m pip install -q -r tests/requirements.txt
@@ -73,8 +81,8 @@ test-integration:
 	docker compose -f tests/integration/docker-compose.test.yml up -d --build
 	python3 -m pip install -q -r tests/requirements.txt
 	python3 -m pytest tests/integration -m integration -q; \
-	status=$$?; docker compose -f tests/integration/docker-compose.test.yml down -v; \
-	exit $$status
+        status=$$?; docker compose -f tests/integration/docker-compose.test.yml down -v; \
+        exit $$status
 
 # No-docker path (sandboxes, dev laptops, air-gapped hosts): boots the four
 # services as bare processes with the same env the test containers get, runs
@@ -83,8 +91,8 @@ test-integration-native:
 	bash tools/native_stack.sh up-test
 	python3 -m pip install -q -r tests/requirements.txt
 	python3 -m pytest tests/integration -m integration -q; \
-	status=$$?; bash tools/native_stack.sh down; \
-	exit $$status
+        status=$$?; bash tools/native_stack.sh down; \
+        exit $$status
 
 # Bare-process prod-shape stack (ports 8100-8103) — what loadtest targets when
 # docker is unavailable. `make stack-stop` tears it down.
@@ -96,15 +104,15 @@ stack-stop:
 
 loadtest:
 	@if command -v locust >/dev/null 2>&1; then \
-		locust -f tools/loadtest/locustfile.py --headless \
-			-u $(or $(LOCUST_USERS),20) -r 2 -t $(or $(LOCUST_RUN_TIME),2m) \
-			--host $(or $(LOCUST_HOST),http://localhost:8103); \
-	else \
-		echo "locust not found — falling back to docker image"; \
-		docker run --rm --network host -v $(PWD)/tools/loadtest:/mnt/locust \
-			locustio/locust -f /mnt/locust/locustfile.py --headless \
-			-u $(or $(LOCUST_USERS),20) -r 2 -t $(or $(LOCUST_RUN_TIME),2m); \
-	fi
+                locust -f tools/loadtest/locustfile.py --headless \
+                        -u $(or $(LOCUST_USERS),20) -r 2 -t $(or $(LOCUST_RUN_TIME),2m) \
+                        --host $(or $(LOCUST_HOST),http://localhost:8103); \
+        else \
+                echo "locust not found — falling back to docker image"; \
+                docker run --rm --network host -v $(PWD)/tools/loadtest:/mnt/locust \
+                        locustio/locust -f /mnt/locust/locustfile.py --headless \
+                        -u $(or $(LOCUST_USERS),20) -r 2 -t $(or $(LOCUST_RUN_TIME),2m); \
+        fi
 
 backup:
 	bash tools/backup.sh

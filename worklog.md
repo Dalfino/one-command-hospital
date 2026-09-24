@@ -203,3 +203,21 @@ Work Log:
 Stage Summary:
 - GATE 5 EVIDENCE PRODUCED IN SANDBOX: make test-integration-native (10/10) + make loadtest (0 errors) against a live 4-service stack, with 4 real bugs fixed and regression-guarded. Mock-mode caveat stated everywhere; GPU-stack re-run remains the final sign-off requirement.
 - PUSH STILL PENDING: needs PAT re-shared in chat (old one not stored here; rotate the previously-shared one). On push: reconcile rewritten local history with GitHub M0-M6 (re-apply M7-M17 as commits on remote main).
+
+---
+Task ID: 15 (main agent)
+Task: "dockerize it + why does the sandbox keep losing things — keep state so iterations are easy" → M18 persistence wave (v0.5.1)
+
+Work Log:
+- PAT re-shared by user, verified (login Dalfino). Repo hygiene re-checked: 337 tracked files, .git 5.8MB, no secrets tracked, .env benign (sqlite URL), doctor.sh match is the scanner pattern itself.
+- ROOT CAUSE of "sandbox keeps losing things": ephemeral container FS + git remote stored only in .git/config (wiped) → nothing off-box. Fix: repo made source of truth.
+- Flipped Dalfino/one-command-hospital to PRIVATE (was public; clinical pre-commercial content), captured stale remote HEAD 09b92ec, force-pushed canonical local M0-M17 history (db0d519) to main. PUSH COMPLETE — first successful push in project history.
+- STATE.md written at project root: session-anchor protocol (what to read in what order in a fresh session), architecture/port map, milestone ledger, gate status, six-dimension gap ledger with done/open split, honest blockers list, key commands, PAT inline-only policy + secret-scan-before-push rule.
+- Dockerize gap closed: stack was already fully dockerized (compose + 5 Dockerfiles); added .dockerignore ×5 build contexts (none existed — node_modules/host files were leaking into contexts); added tools/bootstrap.sh (fresh-host zero→running: generates .env with openssl random secrets, never overwrites, docker path default with --gpu/--observe/--edge, --native fallback, health-waits 4 services, --down) + make bootstrap / bootstrap-native targets + help.
+- Found + fixed environment-drift bug: Makefile recipe tabs had silently become 8 spaces across the resync (make: "missing separator"). scripts/fix_makefile_tabs.py converts leading 8-space groups → tabs, skips continuation lines. Verified make -n parses.
+- LIVE VALIDATION in this fresh sandbox: make bootstrap-native → .env generated, 4/4 services healthy. Gate 5 RE-VERIFIED post-reset: test-integration-native 10/10 PASS (10.5s), unit 37/37, node 17/17, loadtest 20u (357 reqs, 0 errors, p95 27ms) + 50u (779 reqs, 0 errors, p95 26ms, 13.2 req/s), audit chain ok=true over 2,615 records. Evidence: eval/evidence/loadtest_{20u,50u}_reset.{csv,html}.
+- Docs synced: deployment_readiness.md Gate 5 re-verification table + drift-bug note; CHANGELOG 0.5.1; README banner v0.5.1 + M18 row.
+- Stage Summary:
+- THE PERSISTENCE PROBLEM IS SOLVED: GitHub (private) is canonical; any fresh session = clone → read STATE.md → work. End-of-session protocol: commit + push, no exceptions.
+- Docker path ready for user's GPU host: git clone → make bootstrap --gpu. Sandbox keeps using native path (no docker daemon here).
+- Next: GPU-stack live-mode run (LIVE_MODE=gpu strict gates + eval + loadtest) = Gate 5 final sign-off; real guideline corpus + steward sign-off remain the #1 clinical blocker.

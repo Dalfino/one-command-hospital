@@ -1,0 +1,11 @@
+# Keep build contexts minimal — faster uploads, no host leakage into images.
+node_modules
+audit
+*.log
+.env
+.env.*
+__pycache__
+.pytest_cache
+tests
+docs
+eval
