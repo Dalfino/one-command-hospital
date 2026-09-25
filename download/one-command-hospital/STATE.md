@@ -89,6 +89,7 @@ mode); `gpu_pilot/gpu_pilot_notebook.ipynb` + `docs/gpu_pilot_plan.md`
 | M19–M23 (v0.6.0) | injection guard (8/8 live refusals) · calibration (ECE/risk-coverage/threshold) · sense-consistency verifier (historical/family) · clinician review queue + feedback→eval loop (live E2E verified) · claim-level faithfulness (0.94 first measurement) · docs/tech_radar.md |
 | M24 (v0.6.1) | tech-radar ADOPT wave — **guided decoding** (vLLM `guided_json` answer schema, fail-closed parse, deploy/vllm/) · **CDS Hooks patient-view** (`/cds-services` discovery + hook facade on the shared `runPipeline`, prefetch-preferred/fail-closed, cards w/ review links) · **pgvector in compose data tier** (rag-vector-db + schema, dormant until VECTOR_BACKEND=sbert). Live: unit 69/69, node 36/36, integration 16/16, seed eval 98%, load p95 31ms |
 | M25 (v0.6.2) | GPU-pilot enablement — `LLM_URL` override on native_stack.sh (native GPU mode) · `docs/gpu_pilot_plan.md` (host matrix; tiering: free T4 pilot → Gate-5 sign-off on local ≥24GB or ~$2–5 spot; HOST-manifest evidence protocol) · `gpu_pilot/gpu_pilot_notebook.ipynb` (Kaggle/Colab runbook bundling the radar PILOT experiments) |
+| M26 (v0.6.3) | **GPU Tier-1 pilot EXECUTED on Kaggle T4x2** (headless kernel v6-v12) — citation provenance merge (`citations_for_answer`), guided wire-shape probe+fix (`structured_outputs={json:schema}`), `llm_call_failed` observability, `native_stack.sh` LLM_MODEL forwarding, sha-verified `.bin` dataset carrier + headless kaggle runbook. Results: citation validity **PASS** (93% grounded eval-full, live gate pass), trap refusal **FAIL** (2/10 live, 12/55) + red-team **FAIL** (1/3 cited) = generator abstention is the open decision; evidence `eval/evidence/gpu_pilot_t1_20260925/PILOT_SUMMARY.md` |
 
 ## Gate status (deployment_readiness.md is the authoritative matrix)
 
@@ -155,12 +156,15 @@ for clinician walkthrough, demo dataset load story.
 
 1. Real clinical guideline corpus + clinical steward sign-off (content is
    synthetic/placeholder — this is the #1 blocker and is a human task).
-2. GPU-stack live-mode run — **host decided, free pilot first**
-   (`docs/gpu_pilot_plan.md` + `gpu_pilot/gpu_pilot_notebook.ipynb`):
-   Tier 1 = free Kaggle/Colab T4 pilot (BioMistral-7B int4, strict
-   `LIVE_MODE=gpu tests/live` gates + eval-full + the four radar PILOT
-   experiments); Tier 2 = Gate-5 final sign-off on local ≥24GB or a ~$2–5
-   paid spot (only the loadtest evidence becomes authoritative there).
+2. GPU-stack live-mode run — **Tier 1 EXECUTED (v0.6.3, Kaggle T4x2,
+   headless)**: pipeline proven, citation validity PASS (93% grounded), trap
+   refusal + red-team FAIL on 7B generators (2/10 live traps, 1/3 red-team
+   cited) — generator abstention is the open decision (MedGemma-1.5-4b-it
+   gated / >=13B instruct / verifier-synthesized refusal). Evidence:
+   `eval/evidence/gpu_pilot_t1_20260925/PILOT_SUMMARY.md`.
+   **Tier 2 remains**: Gate-5 final sign-off on local ≥24GB or a ~$2–5 paid
+   spot (only that loadtest evidence becomes authoritative) + the abstention
+   fix + the remaining radar PILOT experiments (embedding swap, reranker).
 3. TLS with real certs + external penetration test.
 4. Medplum auth fail-closed wiring for production FHIR (mocked in tests).
 5. Backup/restore drill EXECUTED on the deployed stack.

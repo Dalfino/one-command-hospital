@@ -5,6 +5,37 @@ Format: [Keep a Changelog](https://keepachangelog.com/); versions: SemVer.
 This is a research project — **nothing here is cleared for clinical
 deployment** (see `docs/deployment_readiness.md` for the gate matrix).
 
+## [0.6.3] — GPU Tier-1 pilot executed on Kaggle T4×2 (M26)
+
+The free-tier pilot ran headless end-to-end (kernel v6–v12): sha-verified
+dataset restore → vLLM int4 → native GPU stack → full gate ladder → evidence
+harvest. **Citation validity gate PASS**; trap refusal and red-team gates FAIL
+on 7B generators — quantified, with decision points. Pilot-grade evidence
+(not Gate-5 sign-off): `eval/evidence/gpu_pilot_t1_20260925/PILOT_SUMMARY.md`.
+
+### Fixed (found BY the pilot)
+- **Citation provenance merge** (`citations_for_answer`): 7B generators emit
+  no inline markers and empty citations arrays (0 citations across 195 live
+  GPU answers vs 95–98% retrieval hits); citations now = markers ∪ generator
+  claims ∪ retrieved sections (unbacked dropped). Verifier stays the
+  per-claim grounding judge. Grounded answers: 0/153 → 143/153 (93%).
+- **Guided wire shape**: `structured_outputs` requires the `{"json": schema}`
+  wrapper — raw schema was 400-rejected, silently degrading to extractive
+  fallback. Wire shape is probed at runtime; `llm_call_failed` is now logged.
+- **native_stack.sh** forwards `LLM_MODEL` (vLLM must `--served-model-name`
+  match it, else 404 → silent fallback).
+- **GPU pilot ops**: headless Kaggle runbook (`gpu_pilot/kaggle/`) with
+  sha-verified `.bin` dataset carrier (Kaggle auto-extracts .tar.gz), deps
+  parity for native mode (presidio + spacy model + locust), prod-gates-first
+  ordering (`native_stack.sh down` kills -prod pids too), mock-shape reset
+  for the integration tier.
+
+### Numbers (v12, Zephyr-SLERP-AWQ, T4×2)
+seed eval 41/42 retrieval (98%) · 39/42 grounded (93%) · full eval 146/153
+(95%) · 143/153 grounded (93%) · live citation-validity gate PASS · live trap
+refusal 2/10 FAIL · red-team 1/3 FAIL · unit/node/audit/integration-native
+PASS · loadtest 20u: p50 ~35-40ms, 7 deterministic 502s (pilot-grade).
+
 ## [0.6.2] — GPU-pilot enablement wave (M25)
 
 The PILOT tier of `docs/tech_radar.md` needs a GPU host. Question answered:

@@ -1,0 +1,12 @@
+{
+  "host": {
+    "provider": "kaggle",
+    "gpu": "Tesla T4, 15360 MiB\nTesla T4, 15360 MiB",
+    "shared_vm": true,
+    "timestamp_utc": "20260925_121546",
+    "model": "BioMistral/BioMistral-7B-Zephyr-Beta-SLERP-AWQ-QGS128-W4-GEMM",
+    "snapshot_sha256": "bfea13cd1438e484f22f94b4bf0fe5ca15f905caf0c863117814faa412c99f6f"
+  },
+  "caveat": "free shared-VM \u2014 pilot-grade evidence, not Gate-5 sign-off",
+  "gate5_signoff": false
+}

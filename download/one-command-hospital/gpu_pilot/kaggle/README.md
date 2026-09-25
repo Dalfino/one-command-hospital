@@ -30,3 +30,10 @@ kaggle kernels output aminurhakim/gpu-pilot-notebook -p ./out
 Evidence pack (in notebook output): `gpu_pilot_evidence_<stamp>.tar.gz` + sha256 + `HOST_manifest.json`
 (caveat: *free shared-VM - pilot-grade evidence, not Gate-5 sign-off*) + `gate_summary.json`.
 Tier-1 success = trap refusal >=90% AND citation validity >=80% AND red-team floor held (tests/live, LIVE_MODE=gpu).
+
+## Status (v0.6.3, 2026-09-25)
+
+Tier-1 pilot EXECUTED end-to-end (kernel versions 6-12): citation-validity
+gate **PASS** (93% grounded), trap-refusal and red-team gates **FAIL** on 7B
+generators — quantified decision points. Full verdict + ops findings:
+`../../eval/evidence/gpu_pilot_t1_20260925/PILOT_SUMMARY.md`.
