@@ -298,11 +298,16 @@ def answer(q: Question):
     llm_used = True
     try:
         raw = call_llm(prompt, guided=guided)
-    except Exception:
+    except Exception as e:
         # Extractive fallback (mock-LLM mode): the pipeline degrades honestly
         # instead of dying. The citation header is PREPENDED so downstream
         # grounding keeps working — an answer with no citation is ungrounded
         # by definition (the mediator flags those).
+        # v0.6.3: log WHY (silent fallbacks masked generator mis-wiring for a
+        # full pilot run — 4ms "answers" were 400s/refusals at the wire).
+        json_log("guideline-rag", "llm_call_failed", level="warning",
+                 error=repr(e)[:300], base_url=LLM_BASE_URL,
+                 model=LLM_MODEL, guided=guided)
         llm_used = False
         h = hits[0]
         raw = f'[{h["corpus_id"]} §{h["section"]}] ' + h["text"].split("\n", 1)[-1].strip()[:800]

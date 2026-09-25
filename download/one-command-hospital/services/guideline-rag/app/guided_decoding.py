@@ -72,10 +72,21 @@ def guided_field() -> str:
 
 def guided_request_fields() -> dict:
     """Extra /chat/completions body fields that turn on guided decoding.
-    Empty dict = legacy mode (constraint off) — callers just merge it in."""
+    Empty dict = legacy mode (constraint off) — callers just merge it in.
+
+    Wire shapes differ per field name (v0.6.3 GPU-pilot finding: a wrong
+    shape is rejected 400 by the live server and the caller silently
+    degrades to the extractive fallback — 4ms answers with verbatim corpus
+    text were the tell):
+      - guided_json        -> the RAW JSON schema (legacy vLLM field)
+      - structured_outputs -> {"json": <schema>} wrapper (current vLLM field)
+    """
     if not guided_enabled():
         return {}
-    return {guided_field(): ANSWER_SCHEMA}
+    field = guided_field()
+    if field == "structured_outputs":
+        return {field: {"json": ANSWER_SCHEMA}}
+    return {field: ANSWER_SCHEMA}
 
 
 def parse_guided(content: str):
