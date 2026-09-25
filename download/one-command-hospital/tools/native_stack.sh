@@ -26,6 +26,9 @@
 #       LLM_URL=http://127.0.0.1:8099/v1 bash tools/native_stack.sh up-prod
 #     (vLLM serving BioMistral-7B — see docs/gpu_pilot_plan.md and
 #     gpu_pilot/gpu_pilot_notebook.ipynb). Unset = the documented mock mode.
+#     LLM_MODEL is forwarded too (default BioMistral/BioMistral-7B) — the
+#     generator must serve under that name (vLLM: --served-model-name) or the
+#     service silently degrades to the extractive fallback (v0.6.3 finding).
 #   - Medplum is deliberately unreachable → mediator's fail-closed FHIR path.
 #   - PID files in /tmp/och-native-stack are also how the fail-closed
 #     integration test SIGSTOPs the verifier natively.
@@ -83,6 +86,7 @@ boot() { # base_port llm_url sfx
       RATE_LIMIT_RPS=50 RATE_LIMIT_BURST=100
   start_py guideline-rag services/guideline-rag $((base+1)) "$sfx" \
       GUIDELINES_DIR="$REPO/guidelines" LLM_BASE_URL="$llm" \
+      LLM_MODEL="${LLM_MODEL:-BioMistral/BioMistral-7B}" \
       VECTOR_BACKEND=bm25 RATE_LIMIT_RPS=50 RATE_LIMIT_BURST=100
   start_py verifier    services/verifier      $((base+2)) "$sfx" \
       RATE_LIMIT_RPS=50 RATE_LIMIT_BURST=100
