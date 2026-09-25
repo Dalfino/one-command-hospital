@@ -142,6 +142,38 @@ def extract_citations(raw: str, manifest: dict, section_text: dict | None = None
     return cites
 
 
+def citations_for_answer(raw: str, guided_obj: dict | None, hits: list,
+                         manifest: dict) -> List["Citation"]:
+    """Provenance merge for a produced (non-refusal) answer — v0.6.3 GPU-pilot
+    finding: 7B generators answer well but rarely emit inline [CORPUS_ID §N]
+    markers and usually leave the guided `citations` array empty; marker-only
+    extraction yielded 0 citations across 195 live GPU answers while retrieval
+    itself hit 95-98%.
+
+    Citations are PROVENANCE — what the generator was actually conditioned on —
+    so the merge is: answer-text markers ∪ generator-claimed pairs ∪ retrieved
+    sections, filtered to sections retrieval actually supplied (a citation the
+    corpus cannot back is not a citation), stamped with manifest edition/title
+    and the quoted text for the verifier's grounding check. The verifier stays
+    the independent per-claim grounding judge downstream. Pure function for
+    eval/tests."""
+    sec_text = {(s["corpus_id"], str(s["section"])): s["text"] for s in hits}
+    keys = {(c.corpus_id, c.section) for c in extract_citations(raw, manifest, sec_text)}
+    for c in (guided_obj or {}).get("citations", []) or []:
+        if isinstance(c, dict):
+            keys.add((str(c.get("corpus_id", "")), str(c.get("section", ""))))
+    keys |= set(sec_text.keys())
+    cites = []
+    for cid, sec in sorted(keys):
+        if cid not in manifest or (cid, sec) not in sec_text:
+            continue
+        e = manifest[cid]
+        cites.append(Citation(corpus_id=cid, section=sec,
+                              edition=e["edition"], title=e["title"],
+                              text=sec_text[(cid, sec)]))
+    return cites
+
+
 class Citation(BaseModel):
     corpus_id: str
     section: str
@@ -335,9 +367,9 @@ def answer(q: Question):
                         int((time.time() - t0) * 1000), retrieval_meta)
 
     # Improvement #2: stamp every citation with the manifest edition + title.
-    # Text map built from the RETRIEVED sections only (never the whole corpus).
-    sec_text = {(s["corpus_id"], str(s["section"])): s["text"] for s in hits}
-    cites = extract_citations(raw, manifest, sec_text)
+    # v0.6.3: provenance merge (markers ∪ generator claims ∪ retrieved sections)
+    # instead of marker-only extraction — see citations_for_answer().
+    cites = citations_for_answer(raw, guided_obj, hits, manifest)
 
     result = Answer(answer=raw, citations=cites, refusal=False,
                     latency_ms=int((time.time() - t0) * 1000), model=LLM_MODEL,

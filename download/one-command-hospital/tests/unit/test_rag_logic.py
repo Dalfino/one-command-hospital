@@ -68,6 +68,40 @@ def test_extract_citations_empty_when_no_markers():
     assert rag.extract_citations("no citations here at all", rag.manifest) == []
 
 
+# ── citation provenance merge (v0.6.3 GPU-pilot finding) ─────────────────
+
+def _hit(cid, sec, text="section body"):
+    return {"corpus_id": cid, "section": sec, "edition": "v1", "text": text}
+
+
+def test_citations_for_answer_includes_retrieved_even_without_markers():
+    # the v10/v11 GPU reality: sane answer text, zero inline markers, empty
+    # guided citations — provenance must still cite what the generator saw
+    hits = [_hit("ANTICOAG-BRIDGE", "3"), _hit("SEPSIS-SCR", "2")]
+    cites = rag.citations_for_answer("prose with no markers at all", None, hits, rag.manifest)
+    ids = [(c.corpus_id, c.section) for c in cites]
+    assert ids == [("ANTICOAG-BRIDGE", "3"), ("SEPSIS-SCR", "2")]
+    assert all(c.text and c.edition for c in cites), "citations must carry grounding text + edition"
+
+
+def test_citations_for_answer_merges_model_claims_and_drops_unbacked():
+    hits = [_hit("ANTICOAG-BRIDGE", "3")]
+    guided = {"covered": True, "answer": "x",
+              "citations": [{"corpus_id": "SEPSIS-SCR", "section": 9}]}  # claimed but never retrieved
+    raw = "claim [ANTICOAG-BRIDGE §4] per protocol"  # marker for a section NOT retrieved
+    cites = rag.citations_for_answer(raw, guided, hits, rag.manifest)
+    ids = [(c.corpus_id, c.section) for c in cites]
+    assert ids == [("ANTICOAG-BRIDGE", "3")], "unbacked claims/markers must be dropped; retrieved kept"
+
+
+def test_citations_for_answer_text_marker_beats_retrieval_ordering():
+    hits = [_hit("SEPSIS-SCR", "4"), _hit("ANTICOAG-BRIDGE", "3")]
+    raw = "per [ANTICOAG-BRIDGE §3]"
+    cites = rag.citations_for_answer(raw, None, hits, rag.manifest)
+    ids = [(c.corpus_id, c.section) for c in cites]
+    assert ids == [("ANTICOAG-BRIDGE", "3"), ("SEPSIS-SCR", "4")]  # deterministic order
+
+
 # ── prompt construction ───────────────────────────────────────────────────
 
 def test_build_prompt_contains_rules_excerpts_and_question():
