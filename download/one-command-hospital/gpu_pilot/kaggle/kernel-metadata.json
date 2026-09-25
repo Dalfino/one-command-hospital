@@ -1,0 +1,18 @@
+{
+  "id": "aminurhakim/gpu-pilot-notebook",
+  "title": "gpu_pilot_notebook",
+  "code_file": "gpu_pilot_notebook.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [
+    "aminurhakim/och-snapshot"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
