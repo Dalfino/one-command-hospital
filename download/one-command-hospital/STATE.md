@@ -16,7 +16,7 @@
 > and `git push origin main`. A session that ends without a push lost its work.
 
 - **Repo:** https://github.com/Dalfino/one-command-hospital (PRIVATE since 2026-09-24)
-- **Version:** v0.6.1 (tech-radar ADOPT wave: guided decoding + CDS Hooks + pgvector)
+- **Version:** v0.6.2 (GPU-pilot enablement: native-stack `LLM_URL` override + free-GPU pilot plan + runbook notebook)
 - **Status:** high-fidelity prototype on synthetic data; Gate 0–5 evidence
   produced in mock/simulated mode; NOT clinically deployable (see Blockers).
 
@@ -57,7 +57,8 @@ download/one-command-hospital/
 ├── tests/               unit(py) · node(node:test) · integration(py,docker-or-native) · live(py,GPU-gated)
 ├── eval/                qa_seed.yaml(42) · qa_full.yaml(208) · run_eval.py · evidence/
 ├── tools/               doctor.sh · native_stack.sh · bootstrap.sh · backup/restore.sh · loadtest/
-├── docs/                deployment_readiness.md(Gates 0–5) · governance.md · model_card.md · api/openapi.yaml
+├── docs/                deployment_readiness.md(Gates 0–5) · governance.md · model_card.md · api/openapi.yaml · gpu_pilot_plan.md
+├── gpu_pilot/           GPU-pilot runbook notebook (free T4 first: Kaggle/Colab → sign-off local/spot)
 ├── portal/              willow portal app copy (workspace twin: /home/z/my-project/src)
 ├── smart-app/           SMART-on-FHIR widget (dist/ built)
 ├── edge/                Caddy TLS terminator config
@@ -71,6 +72,10 @@ New in v0.6.1: `rag-vector-db` (pgvector, `data` net, dormant) in compose;
 mediator exposes `GET /cds-services` + `POST /cds-services/guideline-copilot-patient-view`;
 guided decoding env on guideline-rag (`GUIDED_DECODING`, `GUIDED_JSON_FIELD`);
 bootstrap .env gains `RAG_VECTOR_DB_PASS`, `VECTOR_BACKEND`, `VECTOR_DB_URL`.
+New in v0.6.2: `LLM_URL` env override on `native_stack.sh up-test/up-prod`
+(native GPU mode — point guideline-rag at vLLM; unset keeps documented mock
+mode); `gpu_pilot/gpu_pilot_notebook.ipynb` + `docs/gpu_pilot_plan.md`
+(free-T4-first GPU session plan).
 
 ## Milestone ledger (detail in CHANGELOG.md)
 
@@ -83,6 +88,7 @@ bootstrap .env gains `RAG_VECTOR_DB_PASS`, `VECTOR_BACKEND`, `VECTOR_DB_URL`.
 | M18 (b19cebf, v0.5.1) | repo pushed to private GitHub as source of truth; STATE.md anchor; make bootstrap[-native]; .dockerignore ×5; Gate 5 re-verified after full environment reset |
 | M19–M23 (v0.6.0) | injection guard (8/8 live refusals) · calibration (ECE/risk-coverage/threshold) · sense-consistency verifier (historical/family) · clinician review queue + feedback→eval loop (live E2E verified) · claim-level faithfulness (0.94 first measurement) · docs/tech_radar.md |
 | M24 (v0.6.1) | tech-radar ADOPT wave — **guided decoding** (vLLM `guided_json` answer schema, fail-closed parse, deploy/vllm/) · **CDS Hooks patient-view** (`/cds-services` discovery + hook facade on the shared `runPipeline`, prefetch-preferred/fail-closed, cards w/ review links) · **pgvector in compose data tier** (rag-vector-db + schema, dormant until VECTOR_BACKEND=sbert). Live: unit 69/69, node 36/36, integration 16/16, seed eval 98%, load p95 31ms |
+| M25 (v0.6.2) | GPU-pilot enablement — `LLM_URL` override on native_stack.sh (native GPU mode) · `docs/gpu_pilot_plan.md` (host matrix; tiering: free T4 pilot → Gate-5 sign-off on local ≥24GB or ~$2–5 spot; HOST-manifest evidence protocol) · `gpu_pilot/gpu_pilot_notebook.ipynb` (Kaggle/Colab runbook bundling the radar PILOT experiments) |
 
 ## Gate status (deployment_readiness.md is the authoritative matrix)
 
@@ -141,12 +147,20 @@ for clinician walkthrough, demo dataset load story.
 > read that before planning any new work wave. The tech-radar ADOPT list is
 > fully shipped (v0.6.1); **PILOT experiments are bundled into the GPU-host
 > session** (embedding swap, reranker, MedGemma 1.5 vs BioMistral, guardrail
-> classifier) — one session, four evidence-backed decisions.
+> classifier) — one session, four evidence-backed decisions. GPU host
+> decided (v0.6.2): **free T4 pilot first** (Kaggle preferred / Colab;
+> BioMistral-7B int4 fits), **Gate-5 sign-off on local ≥24GB or a ~$2–5 paid
+> spot** — plan in `docs/gpu_pilot_plan.md`, runbook in
+> `gpu_pilot/gpu_pilot_notebook.ipynb`.
 
 1. Real clinical guideline corpus + clinical steward sign-off (content is
    synthetic/placeholder — this is the #1 blocker and is a human task).
-2. GPU-stack live-mode run: `LIVE_MODE=gpu make -C tests/live ...` strict gates
-   + rerun eval + loadtest against vLLM (Gate 5 final sign-off).
+2. GPU-stack live-mode run — **host decided, free pilot first**
+   (`docs/gpu_pilot_plan.md` + `gpu_pilot/gpu_pilot_notebook.ipynb`):
+   Tier 1 = free Kaggle/Colab T4 pilot (BioMistral-7B int4, strict
+   `LIVE_MODE=gpu tests/live` gates + eval-full + the four radar PILOT
+   experiments); Tier 2 = Gate-5 final sign-off on local ≥24GB or a ~$2–5
+   paid spot (only the loadtest evidence becomes authoritative there).
 3. TLS with real certs + external penetration test.
 4. Medplum auth fail-closed wiring for production FHIR (mocked in tests).
 5. Backup/restore drill EXECUTED on the deployed stack.

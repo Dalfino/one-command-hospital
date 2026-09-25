@@ -21,6 +21,11 @@
 # Notes:
 #   - LLM is deliberately unreachable → guideline-rag's honest extractive
 #     fallback (citation-prefixed answers). This is the documented mock mode.
+#   - GPU mode (v0.6.2): point guideline-rag at a live generator by exporting
+#     LLM_URL before up-test/up-prod, e.g.
+#       LLM_URL=http://127.0.0.1:8099/v1 bash tools/native_stack.sh up-prod
+#     (vLLM serving BioMistral-7B — see docs/gpu_pilot_plan.md and
+#     gpu_pilot/gpu_pilot_notebook.ipynb). Unset = the documented mock mode.
 #   - Medplum is deliberately unreachable → mediator's fail-closed FHIR path.
 #   - PID files in /tmp/och-native-stack are also how the fail-closed
 #     integration test SIGSTOPs the verifier natively.
@@ -118,9 +123,9 @@ status() {
 }
 
 case "${1:-}" in
-  up-test) boot 8210 "http://localhost:1/v1" "" ;;
-  up-prod) boot 8100 "http://localhost:1/v1" "-prod" ;;
+  up-test) boot 8210 "${LLM_URL:-http://localhost:1/v1}" "" ;;
+  up-prod) boot 8100 "${LLM_URL:-http://localhost:1/v1}" "-prod" ;;
   down)    down ;;
   status)  status ;;
-  *) echo "usage: $0 {up-test|up-prod|down|status}"; exit 2 ;;
+  *) echo "usage: LLM_URL=<generator-url> $0 {up-test|up-prod|down|status}"; exit 2 ;;
 esac

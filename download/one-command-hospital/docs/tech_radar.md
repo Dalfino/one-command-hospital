@@ -63,7 +63,9 @@ for this system, with the reason stated so we don't re-litigate it).
 2. **PILOT in the same GPU session as Gate 5 final sign-off:** embedding swap
    × eval, cross-encoder reranker × eval, MedGemma 1.5-4B vs BioMistral-7B ×
    (eval + faithfulness + injection + calibration). One session, four
-   evidence-backed decisions.
+   evidence-backed decisions. Host logistics decided in v0.6.2 — free T4
+   pilot first (Kaggle preferred / Colab), sign-off on local ≥24GB or a
+   ~$2–5 paid spot: `docs/gpu_pilot_plan.md` + `gpu_pilot/gpu_pilot_notebook.ipynb`.
 3. **WATCH with triggers:** GraphRAG (trigger: multi-hop questions fail the
    eval), agentic retrieval (trigger: M20 shows retrieval-confidence is the
    abstention bottleneck), guardrail classifier (trigger: novel injection in

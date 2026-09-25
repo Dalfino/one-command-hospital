@@ -5,6 +5,49 @@ Format: [Keep a Changelog](https://keepachangelog.com/); versions: SemVer.
 This is a research project — **nothing here is cleared for clinical
 deployment** (see `docs/deployment_readiness.md` for the gate matrix).
 
+## [0.6.2] — GPU-pilot enablement wave (M25)
+
+The PILOT tier of `docs/tech_radar.md` needs a GPU host. Question answered:
+**it does not have to be local** — free-first is the right sequencing, with
+the sign-off tier unchanged. Decision + executable runbook shipped; no gate
+definitions changed.
+
+### Decided
+- **GPU host tiering** (`docs/gpu_pilot_plan.md`): **Tier 1 free pilot** on
+  Kaggle T4×2 (preferred; headless runs, 30 GPU-hr/wk) or Colab free T4 —
+  BioMistral-7B fits a single T4 in 4-bit (GPTQ/AWQ ≈ 4–5 GB). **Tier 2
+  Gate-5 final sign-off** unchanged: local ≥24GB GPU server (gold standard)
+  or a ~$1–5 RunPod/Vast 3090/4090 spot session — only the loadtest evidence
+  becomes authoritative there. **Tier 3 later:** HF Docker Space (paid T4) as
+  the public demo. Codespaces (free = CPU-only) and HF Spaces (free =
+  CPU-only; ZeroGPU ephemeral/quota-based) are explicitly *not* the free GPU
+  pilot hosts.
+- **Evidence protocol for shared VMs:** every free-host evidence pack carries
+  `eval/evidence/HOST_manifest.json` (provider, GPU, shared-VM flag, model)
+  and the fixed caveat "free shared-VM — pilot-grade evidence, not Gate-5
+  sign-off". Functional strict gates (trap refusal ≥90%, citation validity
+  ≥80%, red-team floor) remain valid pilot evidence; latency from shared VMs
+  never counts toward Gate 5.
+
+### Added
+- `tools/native_stack.sh`: `LLM_URL` env override for `up-test`/`up-prod` —
+  previously the generator URL was hardcoded unreachable (mock mode only);
+  now native GPU mode is `LLM_URL=http://127.0.0.1:8099/v1 bash
+  tools/native_stack.sh up-prod`. Unset behavior byte-identical to before.
+- `gpu_pilot/gpu_pilot_notebook.ipynb`: the whole session as a runbook —
+  host introspection → PAT clone (inline-only, scrubbed) → interface
+  discovery (STOP-on-drift) → deps + vLLM → 4-bit BioMistral-7B (PILOT_MODEL
+  switch for the MedGemma 1.5-4B comparison; optional HF token for gated
+  models) → native GPU stack (guided decoding on) → full gate ladder
+  (test-unit/test-node/test-integration-native/eval/eval-full/LIVE strict/
+  loadtest/audit-verify) → HOST-manifest evidence harvest + sha256 → teardown.
+
+### Changed
+- `STATE.md`: blocker #2 rewritten around the tiering; milestone ledger M25;
+  architecture map gains `gpu_pilot/`.
+- `docs/tech_radar.md`: strategic short-list item 2 points at the plan doc +
+  notebook.
+
 ## [0.6.1] — Tech-radar ADOPT wave (M24)
 
 All three ADOPT verdicts from `docs/tech_radar.md` implemented, no GPU needed.
